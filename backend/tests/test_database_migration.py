@@ -35,6 +35,29 @@ class DatabaseMigrationTest(unittest.TestCase):
                 {"title", "credential_type", "status", "review_comment"}.issubset(columns)
             )
 
+    def test_existing_interests_table_receives_embedding_metadata(self):
+        with tempfile.TemporaryDirectory(prefix="student-growth-migration-") as directory:
+            path = Path(directory) / "legacy.db"
+            connection = sqlite3.connect(path)
+            try:
+                connection.execute(
+                    """CREATE TABLE interests (
+                       id INTEGER PRIMARY KEY, student_id INTEGER, tags TEXT, description TEXT
+                    )"""
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+            with patch.dict(os.environ, {"DATABASE_PATH": str(path)}):
+                init_db()
+                with get_db() as db:
+                    columns = {
+                        row["name"] for row in db.execute("PRAGMA table_info(interests)")
+                    }
+
+            self.assertTrue({"embedding", "embedding_model"}.issubset(columns))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -20,6 +20,11 @@ STUDENT_FILE_COLUMNS = {
     "updated_at": "TEXT NOT NULL DEFAULT ''",
 }
 
+INTEREST_COLUMNS = {
+    "embedding": "TEXT",
+    "embedding_model": "TEXT NOT NULL DEFAULT ''",
+}
+
 
 def database_path() -> Path:
     configured = os.getenv("DATABASE_PATH")
@@ -55,6 +60,12 @@ def init_db() -> None:
         for name, definition in STUDENT_FILE_COLUMNS.items():
             if name not in existing:
                 db.execute(f"ALTER TABLE student_files ADD COLUMN {name} {definition}")
+        interest_columns = {
+            row["name"] for row in db.execute("PRAGMA table_info(interests)")
+        }
+        for name, definition in INTEREST_COLUMNS.items():
+            if name not in interest_columns:
+                db.execute(f"ALTER TABLE interests ADD COLUMN {name} {definition}")
         db.execute(
             "CREATE INDEX IF NOT EXISTS idx_student_files_status "
             "ON student_files(status, uploaded_at)"

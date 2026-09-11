@@ -90,7 +90,7 @@ student_no,year,semester,chinese,math,english,politics
 
 ## AI 工作方式
 
-检索服务默认尝试加载 `paraphrase-multilingual-MiniLM-L12-v2`。可通过 `EMBEDDING_MODEL` 指向本地模型目录，避免运行环境联网。约 1000 名学生时直接在内存计算余弦相似度即可；生产环境可在兴趣更新时持久化向量，并按需换成 pgvector。
+检索服务默认尝试加载 `paraphrase-multilingual-MiniLM-L12-v2`。可通过 `EMBEDDING_MODEL` 指向本地模型目录，并设置 `EMBEDDING_LOCAL_ONLY=true` 避免后端启动时检查远程更新。学生修改兴趣时会计算并持久化向量；教师检索时只计算查询向量，再与已有学生向量比较。旧数据缺少向量或更换模型时会批量补算一次并回写数据库。约 1000 名学生时直接在内存计算余弦相似度即可；更大规模可换成 pgvector。
 
 报告服务通过 LangGraph 依次执行趋势计算、本地兜底报告准备、OpenAI 兼容模型生成和输出校验。每一科及综合平均分仍由 Python 线性回归计算，只有计算结果会交给模型转成自然语言。配置方法：
 

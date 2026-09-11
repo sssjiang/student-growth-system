@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS interests (
   tags TEXT NOT NULL DEFAULT '[]',
   description TEXT NOT NULL DEFAULT '',
   embedding TEXT,
+  embedding_model TEXT NOT NULL DEFAULT '',
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
 );

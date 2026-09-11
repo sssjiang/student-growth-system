@@ -20,7 +20,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from database import get_db, init_db
 from services.grade_report import generate_report
 from services.file_storage import InvalidFileError, LocalFileStorage
-from services.semantic_search import encode_interest, search_students
+from services.semantic_search import embedding_model_name, encode_interest, search_students
 
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -173,12 +173,14 @@ def create_app(test_config=None):
                 description = str(data.get("interest_description", "")).strip()
                 embedding = encode_interest(" ".join(tags) + " " + description)
                 db.execute(
-                    """INSERT INTO interests(student_id,tags,description,embedding)
-                       VALUES(?,?,?,?) ON CONFLICT(student_id) DO UPDATE SET
+                    """INSERT INTO interests(student_id,tags,description,embedding,embedding_model)
+                       VALUES(?,?,?,?,?) ON CONFLICT(student_id) DO UPDATE SET
                        tags=excluded.tags, description=excluded.description,
-                       embedding=excluded.embedding, updated_at=CURRENT_TIMESTAMP""",
+                       embedding=excluded.embedding, embedding_model=excluded.embedding_model,
+                       updated_at=CURRENT_TIMESTAMP""",
                     (student["id"], json.dumps(tags, ensure_ascii=False), description,
-                     json.dumps(embedding) if embedding else None),
+                     json.dumps(embedding) if embedding else None,
+                     embedding_model_name() if embedding else ""),
                 )
             profile = profile_for_user(db, g.user["id"])
         return jsonify({"student": profile})
@@ -344,8 +346,16 @@ def create_app(test_config=None):
         if len(query) < 2:
             return error("请描述活动需求，至少输入 2 个字")
         with get_db() as db:
-            students = student_list(db)
-        results, engine = search_students(query, students, int(data.get("limit", 20)))
+            students = student_list(db, include_embedding=True)
+            results, engine, embedding_updates = search_students(
+                query, students, int(data.get("limit", 20))
+            )
+            if embedding_updates:
+                db.executemany(
+                    """UPDATE interests SET embedding=?,embedding_model=?,
+                       updated_at=CURRENT_TIMESTAMP WHERE student_id=?""",
+                    embedding_updates,
+                )
         return jsonify({"query": query, "count": len(results), "engine": engine, "students": results})
 
     @app.route("/api/teacher/students/<int:student_id>/grades", methods=["GET", "POST"])
@@ -510,12 +520,17 @@ def grade_rows(db, student_id):
     )]
 
 
-def student_list(db):
+def student_list(db, include_embedding=False):
+    embedding_columns = (
+        ", COALESCE(i.embedding,'') embedding, COALESCE(i.embedding_model,'') embedding_model"
+        if include_embedding
+        else ""
+    )
     rows = db.execute(
-        """SELECT s.id,s.student_no,s.name,s.gender,s.grade,s.class_name,s.bio,
+        f"""SELECT s.id,s.student_no,s.name,s.gender,s.grade,s.class_name,s.bio,
                   COALESCE(i.tags,'[]') tags, COALESCE(i.description,'') description,
                   ROUND(AVG((g.chinese+g.math+g.english+g.politics)/4),1) average,
-                  COUNT(g.id) grade_count
+                  COUNT(g.id) grade_count {embedding_columns}
            FROM students s LEFT JOIN interests i ON i.student_id=s.id
            LEFT JOIN grades g ON g.student_id=s.id GROUP BY s.id ORDER BY s.student_no"""
     )

@@ -26,9 +26,13 @@ def _load_model():
     try:
         from sentence_transformers import SentenceTransformer
 
-        _model = SentenceTransformer(
-            os.getenv("EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
-        )
+        model_name = embedding_model_name()
+        local_only = os.getenv("EMBEDDING_LOCAL_ONLY", "false").lower() in {
+            "1",
+            "true",
+            "yes",
+        }
+        _model = SentenceTransformer(model_name, local_files_only=local_only)
     except Exception:
         _model_failed = True
     return _model
@@ -65,13 +69,51 @@ def encode_interest(text: str):
     return None
 
 
+def embedding_model_name():
+    return os.getenv("EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
+
+
+def _stored_vector(student, expected_model, expected_dimensions):
+    if student.get("embedding_model") != expected_model:
+        return None
+    try:
+        vector = json.loads(student.get("embedding") or "")
+        if (
+            not isinstance(vector, list)
+            or len(vector) != expected_dimensions
+            or not all(isinstance(value, (int, float)) for value in vector)
+        ):
+            return None
+        return vector
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return None
+
+
 def search_students(query: str, students: list[dict], limit: int = 20):
     model = _load_model()
     corpus = [f"{item.get('tags_text', '')} {item.get('description', '')}" for item in students]
+    embedding_updates = []
     if model and corpus:
-        vectors = model.encode([query, *corpus], normalize_embeddings=True)
-        query_vector = vectors[0]
-        scores = [float(query_vector @ vector) for vector in vectors[1:]]
+        query_vector = model.encode(query, normalize_embeddings=True).tolist()
+        model_name = embedding_model_name()
+        vectors = [
+            _stored_vector(student, model_name, len(query_vector)) for student in students
+        ]
+        missing_indexes = [index for index, vector in enumerate(vectors) if vector is None]
+        if missing_indexes:
+            missing_vectors = model.encode(
+                [corpus[index] for index in missing_indexes],
+                normalize_embeddings=True,
+            )
+            for index, vector in zip(missing_indexes, missing_vectors):
+                stored = vector.tolist()
+                vectors[index] = stored
+                serialized = json.dumps(stored)
+                embedding_updates.append((serialized, model_name, students[index]["id"]))
+        scores = [
+            float(sum(left * right for left, right in zip(query_vector, vector)))
+            for vector in vectors
+        ]
         engine = "sentence-transformers"
     else:
         query_tokens = Counter(_tokens(query))
@@ -81,6 +123,8 @@ def search_students(query: str, students: list[dict], limit: int = 20):
     ranked = []
     for item, score in zip(students, scores):
         result = dict(item)
+        result.pop("embedding", None)
+        result.pop("embedding_model", None)
         result["score"] = round(max(0.0, score), 4)
         result["match_reason"] = _match_reason(query, item)
         ranked.append(result)
@@ -88,7 +132,7 @@ def search_students(query: str, students: list[dict], limit: int = 20):
     if engine == "local-keyword-fallback":
         matched = [item for item in ranked if item["score"] > 0]
         ranked = matched or ranked[:3]
-    return ranked[: max(1, min(limit, 50))], engine
+    return ranked[: max(1, min(limit, 50))], engine, embedding_updates
 
 
 def _match_reason(query: str, student: dict) -> str:

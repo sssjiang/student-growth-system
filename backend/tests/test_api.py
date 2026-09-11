@@ -9,6 +9,8 @@ os.environ["DATABASE_PATH"] = os.path.join(_temp_dir, "test.db")
 os.environ["UPLOAD_FOLDER"] = os.path.join(_temp_dir, "uploads")
 os.environ["SECRET_KEY"] = "integration-test-key"
 os.environ["AI_REPORT_ENABLED"] = "false"
+os.environ["EMBEDDING_LOCAL_ONLY"] = "true"
+os.environ["HF_HUB_OFFLINE"] = "1"
 
 from app import app  # noqa: E402
 from seed import seed  # noqa: E402
