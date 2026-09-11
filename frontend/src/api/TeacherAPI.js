@@ -29,6 +29,12 @@ class TeacherAPI {
     api.put(`/teacher/credentials/${fileId}/review`, { status, comment });
 
   previewCredential = (fileId) => api.getBlob(`/files/${fileId}?preview=1`);
+
+  getCredentialAnalysis = (fileId) =>
+    api.get(`/teacher/credentials/${fileId}/analysis`);
+
+  analyzeCredential = (fileId) =>
+    api.post(`/teacher/credentials/${fileId}/analysis`, {});
 }
 
 export default new TeacherAPI();

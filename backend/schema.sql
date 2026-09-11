@@ -82,5 +82,26 @@ CREATE TABLE IF NOT EXISTS reports (
   FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS credential_ai_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_id INTEGER NOT NULL UNIQUE,
+  analysis_status TEXT NOT NULL DEFAULT 'pending'
+    CHECK(analysis_status IN ('pending', 'processing', 'completed', 'failed')),
+  overall_status TEXT NOT NULL DEFAULT '',
+  overall_confidence REAL NOT NULL DEFAULT 0,
+  extraction_method TEXT NOT NULL DEFAULT '',
+  extraction_confidence REAL NOT NULL DEFAULT 0,
+  extracted_text TEXT NOT NULL DEFAULT '',
+  extracted_fields TEXT NOT NULL DEFAULT '{}',
+  comparisons TEXT NOT NULL DEFAULT '[]',
+  generated_by TEXT NOT NULL DEFAULT '',
+  error_message TEXT NOT NULL DEFAULT '',
+  analyzed_at TEXT,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(file_id) REFERENCES student_files(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_grades_student_year ON grades(student_id, year, semester);
 CREATE INDEX IF NOT EXISTS idx_students_class ON students(grade, class_name);
+CREATE INDEX IF NOT EXISTS idx_credential_ai_reviews_status
+  ON credential_ai_reviews(analysis_status, updated_at);

@@ -50,7 +50,8 @@
     "insufficientGrades": "至少需要两个学期的成绩才能生成趋势报告",
     "fileMissing": "文件不存在",
     "fileForbidden": "没有访问此文件的权限",
-    "fileTooLarge": "文件不能超过 10MB"
+    "fileTooLarge": "文件不能超过 10MB",
+    "aiReviewFailed": "AI 辅助评审失败，请稍后重试"
   },
   "brand": { "mark": "知", "name": "知行", "subtitle": "学生成长中心" },
   "nav": {
@@ -236,6 +237,61 @@
     "confirmApprove": "确认通过",
     "confirmReject": "确认驳回",
     "confirmUndo": "确认撤销"
+  },
+  "aiReview": {
+    "title": "AI 辅助评审",
+    "subtitle": "核对填写信息与上传文件",
+    "analyzing": "正在读取并分析凭证…",
+    "analyzingHint": "系统正在提取文件文字、识别关键字段并进行一致性比对。",
+    "failed": "分析失败",
+    "retry": "重试",
+    "reanalyze": "重新分析",
+    "confidence": "综合置信度 {{value}}%",
+    "notice": "结果仅用于辅助核对文件内容，不能证明凭证真实有效，最终结果由老师确认。",
+    "submitted": "学生填写",
+    "extracted": "文件识别",
+    "empty": "未填写",
+    "notFound": "未识别到",
+    "evidence": "证据：{{evidence}}",
+    "method": "提取方式：{{method}}",
+    "source": "字段提取：{{source}}",
+    "status": {
+      "consistent": "信息基本一致",
+      "mismatch": "发现明显差异",
+      "needs_review": "需要人工核对",
+      "unreadable": "暂时无法识别"
+    },
+    "fieldStatus": {
+      "match": "一致",
+      "partial": "部分一致",
+      "mismatch": "不一致",
+      "not_found": "未识别",
+      "not_provided": "未填写"
+    },
+    "fields": {
+      "student_name": "学生姓名",
+      "award_title": "奖项名称",
+      "issuer": "颁发机构",
+      "award_date": "获奖日期",
+      "credential_type": "荣誉类型"
+    },
+    "methods": {
+      "pdf-text": "PDF 文字提取",
+      "docx-text": "Word 文字提取",
+      "paddleocr": "PaddleOCR",
+      "plain-text": "文本读取",
+      "pdf-parser-unavailable": "PDF 解析器未安装",
+      "docx-parser-unavailable": "Word 解析器未安装",
+      "ocr-unavailable": "OCR 未安装",
+      "unsupported-format": "暂不支持此格式",
+      "extraction-failed": "文件提取失败"
+    },
+    "sources": {
+      "langgraph-openai": "OpenAI 兼容模型",
+      "local-rules": "本地规则",
+      "local-fallback": "模型失败，本地规则降级",
+      "local-extraction": "本地文件提取"
+    }
   },
   "gradeImport": {
     "eyebrow": "成绩管理",

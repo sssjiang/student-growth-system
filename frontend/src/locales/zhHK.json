@@ -50,7 +50,8 @@
     "insufficientGrades": "最少要有兩個學期嘅成績先可以生成趨勢報告",
     "fileMissing": "搵唔到檔案",
     "fileForbidden": "你冇權限存取呢個檔案",
-    "fileTooLarge": "檔案唔可以超過 10MB"
+    "fileTooLarge": "檔案唔可以超過 10MB",
+    "aiReviewFailed": "AI 輔助評審失敗，請稍後再試"
   },
   "brand": { "mark": "知", "name": "知行", "subtitle": "學生成長中心" },
   "nav": {
@@ -236,6 +237,61 @@
     "confirmApprove": "確認通過",
     "confirmReject": "確認駁回",
     "confirmUndo": "確認撤銷"
+  },
+  "aiReview": {
+    "title": "AI 輔助評審",
+    "subtitle": "核對填寫資料同上載檔案",
+    "analyzing": "讀取同分析憑證緊…",
+    "analyzingHint": "系統正提取檔案文字、識別重要欄位並核對一致性。",
+    "failed": "分析失敗",
+    "retry": "再試",
+    "reanalyze": "重新分析",
+    "confidence": "綜合可信度 {{value}}%",
+    "notice": "結果只用嚟輔助核對檔案內容，唔可以證明憑證真偽，最後結果由老師確認。",
+    "submitted": "學生填寫",
+    "extracted": "檔案識別",
+    "empty": "未填寫",
+    "notFound": "未識別到",
+    "evidence": "證據：{{evidence}}",
+    "method": "提取方式：{{method}}",
+    "source": "欄位提取：{{source}}",
+    "status": {
+      "consistent": "資料基本一致",
+      "mismatch": "發現明顯差異",
+      "needs_review": "需要人手核對",
+      "unreadable": "暫時無法識別"
+    },
+    "fieldStatus": {
+      "match": "一致",
+      "partial": "部分一致",
+      "mismatch": "唔一致",
+      "not_found": "未識別",
+      "not_provided": "未填寫"
+    },
+    "fields": {
+      "student_name": "學生姓名",
+      "award_title": "獎項名稱",
+      "issuer": "頒發機構",
+      "award_date": "獲獎日期",
+      "credential_type": "榮譽類型"
+    },
+    "methods": {
+      "pdf-text": "PDF 文字提取",
+      "docx-text": "Word 文字提取",
+      "paddleocr": "PaddleOCR",
+      "plain-text": "文字檔讀取",
+      "pdf-parser-unavailable": "未安裝 PDF 解析器",
+      "docx-parser-unavailable": "未安裝 Word 解析器",
+      "ocr-unavailable": "未安裝 OCR",
+      "unsupported-format": "暫時唔支援呢個格式",
+      "extraction-failed": "檔案提取失敗"
+    },
+    "sources": {
+      "langgraph-openai": "OpenAI 相容模型",
+      "local-rules": "本地規則",
+      "local-fallback": "模型失敗，改用本地規則",
+      "local-extraction": "本地檔案提取"
+    }
   },
   "gradeImport": {
     "eyebrow": "成績管理",

@@ -30,9 +30,20 @@ class DatabaseMigrationTest(unittest.TestCase):
                     columns = {
                         row["name"] for row in db.execute("PRAGMA table_info(student_files)")
                     }
+                    ai_review_columns = {
+                        row["name"]
+                        for row in db.execute(
+                            "PRAGMA table_info(credential_ai_reviews)"
+                        )
+                    }
 
             self.assertTrue(
                 {"title", "credential_type", "status", "review_comment"}.issubset(columns)
+            )
+            self.assertTrue(
+                {"file_id", "analysis_status", "comparisons"}.issubset(
+                    ai_review_columns
+                )
             )
 
     def test_existing_interests_table_receives_embedding_metadata(self):

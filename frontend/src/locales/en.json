@@ -50,7 +50,8 @@
     "insufficientGrades": "At least two semesters of grades are required",
     "fileMissing": "File not found",
     "fileForbidden": "You do not have access to this file",
-    "fileTooLarge": "Files cannot exceed 10 MB"
+    "fileTooLarge": "Files cannot exceed 10 MB",
+    "aiReviewFailed": "AI-assisted review failed. Please try again."
   },
   "brand": {
     "mark": "知",
@@ -240,6 +241,61 @@
     "confirmApprove": "Confirm approval",
     "confirmReject": "Confirm rejection",
     "confirmUndo": "Confirm undo"
+  },
+  "aiReview": {
+    "title": "AI-assisted review",
+    "subtitle": "Compare the submitted details with the file",
+    "analyzing": "Reading and analyzing the credential…",
+    "analyzingHint": "The system is extracting text, identifying key fields, and checking consistency.",
+    "failed": "Analysis failed",
+    "retry": "Retry",
+    "reanalyze": "Analyze again",
+    "confidence": "Overall confidence: {{value}}%",
+    "notice": "This result only helps compare the file content. It does not prove authenticity; the teacher makes the final decision.",
+    "submitted": "Submitted",
+    "extracted": "Found in file",
+    "empty": "Not provided",
+    "notFound": "Not found",
+    "evidence": "Evidence: {{evidence}}",
+    "method": "Extraction: {{method}}",
+    "source": "Field extraction: {{source}}",
+    "status": {
+      "consistent": "Details largely match",
+      "mismatch": "Clear differences found",
+      "needs_review": "Manual review needed",
+      "unreadable": "Could not read the file"
+    },
+    "fieldStatus": {
+      "match": "Match",
+      "partial": "Partial match",
+      "mismatch": "Mismatch",
+      "not_found": "Not found",
+      "not_provided": "Not provided"
+    },
+    "fields": {
+      "student_name": "Student name",
+      "award_title": "Award title",
+      "issuer": "Issuer",
+      "award_date": "Award date",
+      "credential_type": "Achievement type"
+    },
+    "methods": {
+      "pdf-text": "PDF text extraction",
+      "docx-text": "Word text extraction",
+      "paddleocr": "PaddleOCR",
+      "plain-text": "Plain-text reader",
+      "pdf-parser-unavailable": "PDF parser not installed",
+      "docx-parser-unavailable": "Word parser not installed",
+      "ocr-unavailable": "OCR not installed",
+      "unsupported-format": "Unsupported format",
+      "extraction-failed": "Text extraction failed"
+    },
+    "sources": {
+      "langgraph-openai": "OpenAI-compatible model",
+      "local-rules": "Local rules",
+      "local-fallback": "Model failed; local fallback",
+      "local-extraction": "Local file extraction"
+    }
   },
   "gradeImport": {
     "eyebrow": "Grade management",

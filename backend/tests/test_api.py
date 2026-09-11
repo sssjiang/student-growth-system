@@ -86,6 +86,47 @@ class ApiFlowTest(unittest.TestCase):
         self.assertEqual(denied.status_code, 404)
 
         teacher_headers = self.login("teacher", "teacher123")
+        analysis_result = {
+            "extracted_text": "校园摄影大赛一等奖 学校艺术中心",
+            "extraction_method": "pdf-text",
+            "extraction_confidence": 1.0,
+            "extracted_fields": {
+                "award_title": {"value": credential["title"], "evidence": credential["title"]}
+            },
+            "comparisons": [
+                {
+                    "field": "award_title",
+                    "submitted": credential["title"],
+                    "extracted": credential["title"],
+                    "evidence": credential["title"],
+                    "status": "match",
+                    "confidence": 1.0,
+                }
+            ],
+            "overall_status": "consistent",
+            "overall_confidence": 1.0,
+            "generated_by": "local-rules",
+            "error_message": "",
+        }
+        with patch("app.analyze_credential", return_value=analysis_result):
+            analyzed = self.client.post(
+                f"/api/teacher/credentials/{credential['id']}/analysis",
+                headers=teacher_headers,
+            )
+        self.assertEqual(analyzed.status_code, 200)
+        self.assertEqual(
+            analyzed.get_json()["analysis"]["overall_status"], "consistent"
+        )
+        cached_analysis = self.client.get(
+            f"/api/teacher/credentials/{credential['id']}/analysis",
+            headers=teacher_headers,
+        )
+        self.assertEqual(cached_analysis.status_code, 200)
+        self.assertEqual(
+            cached_analysis.get_json()["analysis"]["comparisons"][0]["status"],
+            "match",
+        )
+
         rejected = self.client.put(
             f"/api/teacher/credentials/{credential['id']}/review",
             json={"status": "rejected", "comment": "请补充清晰的获奖日期"},
@@ -130,6 +171,9 @@ class ApiFlowTest(unittest.TestCase):
         )
         self.assertEqual(resubmitted.status_code, 200)
         self.assertEqual(resubmitted.get_json()["files"][0]["status"], "pending")
+        self.assertEqual(
+            resubmitted.get_json()["files"][0]["ai_analysis_status"], "pending"
+        )
 
         approved = self.client.put(
             f"/api/teacher/credentials/{credential['id']}/review",

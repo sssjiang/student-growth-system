@@ -192,6 +192,8 @@ function CredentialReviewPage() {
         <FilePreviewModal
           credential={preview}
           loadBlob={TeacherAPI.previewCredential}
+          loadAnalysis={TeacherAPI.getCredentialAnalysis}
+          analyzeFile={TeacherAPI.analyzeCredential}
           onClose={() => setPreview(null)}
         />
       )}

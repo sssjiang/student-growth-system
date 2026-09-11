@@ -28,6 +28,7 @@ const ERROR_KEYS = {
   文件不存在: 'fileMissing',
   没有访问此文件的权限: 'fileForbidden',
   '文件不能超过 10MB': 'fileTooLarge',
+  'AI 辅助评审失败，请稍后重试': 'aiReviewFailed',
 };
 
 class ApiClient {

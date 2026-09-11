@@ -18,6 +18,7 @@ from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database import get_db, init_db
+from services.credential_analysis import analyze_credential
 from services.grade_report import generate_report
 from services.file_storage import InvalidFileError, LocalFileStorage
 from services.semantic_search import embedding_model_name, encode_interest, search_students
@@ -217,13 +218,17 @@ def create_app(test_config=None):
                     saved = storage.save(uploaded)
                 except InvalidFileError as exc:
                     return error(str(exc))
-                db.execute(
+                cursor = db.execute(
                     """INSERT INTO student_files(
                          student_id,title,credential_type,issuer,awarded_at,description,
                          original_name,stored_name,mime_type,size,status,updated_at
                        ) VALUES(?,?,?,?,?,?,?,?,?,?,'pending',CURRENT_TIMESTAMP)""",
                     (student["id"], *metadata, saved["original_name"], saved["stored_name"],
                      saved["mime_type"], saved["size"]),
+                )
+                db.execute(
+                    "INSERT INTO credential_ai_reviews(file_id) VALUES(?)",
+                    (cursor.lastrowid,),
                 )
             files = credential_rows(db, "WHERE sf.student_id=?", (student["id"],))
         return jsonify({"files": files}), 201 if request.method == "POST" else 200
@@ -279,6 +284,15 @@ def create_app(test_config=None):
                    review_comment='',reviewed_by=NULL,reviewed_at=NULL,updated_at=CURRENT_TIMESTAMP
                    WHERE id=?""",
                 (*metadata, *file_values, file_id),
+            )
+            db.execute(
+                """INSERT INTO credential_ai_reviews(file_id) VALUES(?)
+                   ON CONFLICT(file_id) DO UPDATE SET analysis_status='pending',
+                   overall_status='',overall_confidence=0,extraction_method='',
+                   extraction_confidence=0,extracted_text='',extracted_fields='{}',
+                   comparisons='[]',generated_by='',error_message='',analyzed_at=NULL,
+                   updated_at=CURRENT_TIMESTAMP""",
+                (file_id,),
             )
             files = credential_rows(db, "WHERE sf.student_id=?", (row["student_id"],))
         if saved:
@@ -358,6 +372,79 @@ def create_app(test_config=None):
                 (status, comment, g.user["id"], file_id),
             )
         return jsonify({"message": "审核结果已保存"})
+
+    @app.route(
+        "/api/teacher/credentials/<int:file_id>/analysis", methods=["GET", "POST"]
+    )
+    @token_required("teacher")
+    def credential_analysis(file_id):
+        with get_db() as db:
+            credential = db.execute(
+                """SELECT sf.*,s.name student_name,s.student_no
+                   FROM student_files sf JOIN students s ON s.id=sf.student_id
+                   WHERE sf.id=?""",
+                (file_id,),
+            ).fetchone()
+            if not credential:
+                return error("凭证不存在", 404)
+            if request.method == "GET":
+                analysis = db.execute(
+                    "SELECT * FROM credential_ai_reviews WHERE file_id=?", (file_id,)
+                ).fetchone()
+                return jsonify(
+                    {"analysis": credential_analysis_dict(analysis) if analysis else None}
+                )
+            db.execute(
+                """INSERT INTO credential_ai_reviews(file_id,analysis_status)
+                   VALUES(?,'processing') ON CONFLICT(file_id) DO UPDATE SET
+                   analysis_status='processing',error_message='',updated_at=CURRENT_TIMESTAMP""",
+                (file_id,),
+            )
+
+        file_path = Path(app.config["UPLOAD_FOLDER"]) / credential["stored_name"]
+        if not file_path.is_file():
+            with get_db() as db:
+                db.execute(
+                    """UPDATE credential_ai_reviews SET analysis_status='failed',
+                       error_message='file-not-found',updated_at=CURRENT_TIMESTAMP WHERE file_id=?""",
+                    (file_id,),
+                )
+            return error("文件不存在", 404)
+
+        try:
+            result = analyze_credential(dict(credential), file_path)
+            with get_db() as db:
+                db.execute(
+                    """UPDATE credential_ai_reviews SET analysis_status='completed',
+                       overall_status=?,overall_confidence=?,extraction_method=?,
+                       extraction_confidence=?,extracted_text=?,extracted_fields=?,
+                       comparisons=?,generated_by=?,error_message=?,
+                       analyzed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE file_id=?""",
+                    (
+                        result.get("overall_status") or "needs_review",
+                        result.get("overall_confidence") or 0,
+                        result.get("extraction_method") or "",
+                        result.get("extraction_confidence") or 0,
+                        result.get("extracted_text") or "",
+                        json.dumps(result.get("extracted_fields") or {}, ensure_ascii=False),
+                        json.dumps(result.get("comparisons") or [], ensure_ascii=False),
+                        result.get("generated_by") or "",
+                        result.get("error_message") or "",
+                        file_id,
+                    ),
+                )
+                analysis = db.execute(
+                    "SELECT * FROM credential_ai_reviews WHERE file_id=?", (file_id,)
+                ).fetchone()
+            return jsonify({"analysis": credential_analysis_dict(analysis)})
+        except Exception as exc:
+            with get_db() as db:
+                db.execute(
+                    """UPDATE credential_ai_reviews SET analysis_status='failed',
+                       error_message=?,updated_at=CURRENT_TIMESTAMP WHERE file_id=?""",
+                    (type(exc).__name__, file_id),
+                )
+            return error("AI 辅助评审失败，请稍后重试", 500)
 
     @app.post("/api/teacher/search")
     @token_required("teacher")
@@ -516,13 +603,23 @@ def credential_rows(db, where="", params=()):
             f"""SELECT sf.id,sf.student_id,s.name student_name,s.student_no,s.grade,s.class_name,
                        sf.title,sf.credential_type,sf.issuer,sf.awarded_at,sf.description,
                        sf.original_name,sf.mime_type,sf.size,sf.status,sf.review_comment,
-                       sf.reviewed_at,sf.uploaded_at,sf.updated_at,u.display_name reviewer_name
+                       sf.reviewed_at,sf.uploaded_at,sf.updated_at,u.display_name reviewer_name,
+                       ar.analysis_status ai_analysis_status
                 FROM student_files sf JOIN students s ON s.id=sf.student_id
-                LEFT JOIN users u ON u.id=sf.reviewed_by {where}
+                LEFT JOIN users u ON u.id=sf.reviewed_by
+                LEFT JOIN credential_ai_reviews ar ON ar.file_id=sf.id {where}
                 ORDER BY sf.updated_at DESC,sf.id DESC""",
             params,
         )
     ]
+
+
+def credential_analysis_dict(row):
+    result = dict(row)
+    result["extracted_fields"] = json.loads(result.get("extracted_fields") or "{}")
+    result["comparisons"] = json.loads(result.get("comparisons") or "[]")
+    result.pop("extracted_text", None)
+    return result
 
 
 def profile_for_user(db, user_id):
