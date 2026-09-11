@@ -17,7 +17,7 @@ function ReportView({ data }) {
         <span className="report-source">
           {data.generated_by?.startsWith('local')
             ? '本地分析生成'
-            : 'Claude 辅助生成'}
+            : 'OpenAI 兼容模型辅助生成'}
         </span>
       </div>
       <div className="insight-grid">

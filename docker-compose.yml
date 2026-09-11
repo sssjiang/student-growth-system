@@ -5,7 +5,13 @@ services:
       SECRET_KEY: ${SECRET_KEY:-local-development-key}
       DATABASE_PATH: /app/data/students.db
       UPLOAD_FOLDER: /app/uploads
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_REPORT_ENABLED: ${AI_REPORT_ENABLED:-true}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      LongCat_API_KEY: ${LongCat_API_KEY:-}
+      OpenAI_endpoint: ${OpenAI_endpoint:-}
+      LongCat_MODEL: ${LongCat_MODEL:-}
     volumes:
       - student_data:/app/data
       - student_uploads:/app/uploads

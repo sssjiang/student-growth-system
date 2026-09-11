@@ -6,6 +6,12 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR.parent / ".env")
+
 import jwt
 from flask import Flask, g, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -17,7 +23,6 @@ from services.file_storage import InvalidFileError, LocalFileStorage
 from services.semantic_search import encode_interest, search_students
 
 
-BASE_DIR = Path(__file__).resolve().parent
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 

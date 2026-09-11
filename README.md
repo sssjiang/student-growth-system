@@ -12,7 +12,7 @@
 - 语文、数学、英语、政治成绩单条写入及 CSV 批量导入
 - 纯 Python 线性回归趋势计算，所有预测数字先由程序得出
 - 本地 `sentence-transformers` 中文语义检索；模型不可用时自动使用离线关键词相似度
-- 可选 Claude API 报告润色；没有 API Key 时生成完整的本地规则报告
+- LangGraph 编排成绩计算与 OpenAI 兼容模型报告；没有 API Key 时生成完整的本地规则报告
 - 响应式中文界面、成绩折线图和演示数据
 
 ## 目录
@@ -26,7 +26,7 @@ student-growth-system/
 │   ├── seed.py                   # 演示数据
 │   └── services/
 │       ├── semantic_search.py    # 本地语义检索
-│       └── grade_report.py       # 回归计算与报告生成
+│       └── grade_report.py       # 回归计算与 LangGraph 报告工作流
 ├── frontend/                     # React + Vite
 │   └── src/
 │       ├── api/                  # 按 Auth/Student/Teacher 领域封装
@@ -52,7 +52,7 @@ python seed.py
 python app.py
 ```
 
-基础依赖使用轻量关键词检索和本地报告。需要完整 embedding 与 Claude 能力时安装：
+基础依赖已包含 LangGraph 与 OpenAI 兼容模型客户端。需要完整 embedding 能力时安装：
 
 ```bash
 pip install -r requirements-ai.txt
@@ -92,12 +92,16 @@ student_no,year,semester,chinese,math,english,politics
 
 检索服务默认尝试加载 `paraphrase-multilingual-MiniLM-L12-v2`。可通过 `EMBEDDING_MODEL` 指向本地模型目录，避免运行环境联网。约 1000 名学生时直接在内存计算余弦相似度即可；生产环境可在兴趣更新时持久化向量，并按需换成 pgvector。
 
-报告服务先对每一科和综合平均分执行线性回归，计算均分、变化量、趋势斜率和下一期预测。只有这些计算结果会交给 Claude 转成自然语言，并在提示中明确禁止改写数字。配置方法：
+报告服务通过 LangGraph 依次执行趋势计算、本地兜底报告准备、OpenAI 兼容模型生成和输出校验。每一科及综合平均分仍由 Python 线性回归计算，只有计算结果会交给模型转成自然语言。配置方法：
 
 ```bash
-export ANTHROPIC_API_KEY=your-key
-export CLAUDE_MODEL=claude-sonnet-4-5-20250929
+export AI_REPORT_ENABLED=true
+export OPENAI_API_KEY=your-key
+export OPENAI_BASE_URL=https://api.openai.com/v1
+export OPENAI_MODEL=your-model
 ```
+
+项目也兼容已有的 `LongCat_API_KEY`、`OpenAI_endpoint` 和 `LongCat_MODEL` 变量。模型请求或 JSON 校验失败时，工作流自动返回本地规则报告，不影响教师查看分析结果。
 
 预测只反映已有成绩的线性变化，用于教学观察，不应作为评价或分流学生的唯一依据。
 
@@ -122,6 +126,6 @@ npm run build
 ## 生产化建议
 
 - 将 SQLite 替换为 PostgreSQL，并为 embedding 增加 pgvector 索引。
-- 使用 HTTPS，将 `SECRET_KEY`、Claude Key 放入密钥管理服务。
+- 使用 HTTPS，将 `SECRET_KEY`、模型 API Key 放入密钥管理服务。
 - 上传文件改用私有对象存储和短时签名 URL，并增加病毒扫描。
 - 补充教师账号创建审批、班级范围授权、操作审计和学生数据保留策略。
