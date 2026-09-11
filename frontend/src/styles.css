@@ -1898,6 +1898,12 @@ button {
   color: var(--muted);
   font-size: 9px;
 }
+.review-undo-hint {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
 
 @media (max-width: 1000px) {
   .credential-grid {

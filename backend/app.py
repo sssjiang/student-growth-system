@@ -324,13 +324,26 @@ def create_app(test_config=None):
         data = request.get_json(silent=True) or {}
         status = data.get("status")
         comment = str(data.get("comment", "")).strip()[:500]
-        if status not in {"approved", "rejected"}:
-            return error("请选择通过或驳回")
+        if status not in {"pending", "approved", "rejected"}:
+            return error("请选择通过、驳回或撤销审核")
         if status == "rejected" and not comment:
             return error("驳回时请填写审核意见")
         with get_db() as db:
-            if not db.execute("SELECT 1 FROM student_files WHERE id=?", (file_id,)).fetchone():
+            credential = db.execute(
+                "SELECT status FROM student_files WHERE id=?", (file_id,)
+            ).fetchone()
+            if not credential:
                 return error("凭证不存在", 404)
+            if status == "pending":
+                if credential["status"] == "pending":
+                    return error("只有已审核的凭证可以撤销审核")
+                db.execute(
+                    """UPDATE student_files SET status='pending',review_comment='',
+                       reviewed_by=NULL,reviewed_at=NULL,updated_at=CURRENT_TIMESTAMP
+                       WHERE id=?""",
+                    (file_id,),
+                )
+                return jsonify({"message": "审核结果已撤销"})
             db.execute(
                 """UPDATE student_files SET status=?,review_comment=?,reviewed_by=?,
                    reviewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?""",

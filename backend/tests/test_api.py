@@ -53,7 +53,7 @@ class ApiFlowTest(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_credential_upload_review_resubmit_and_delete(self):
+    def test_credential_upload_review_undo_resubmit_and_delete(self):
         student_headers = self.login("student1", "student123")
         uploaded = self.client.post(
             "/api/student/files",
@@ -86,6 +86,30 @@ class ApiFlowTest(unittest.TestCase):
         )
         self.assertEqual(rejected.status_code, 200)
 
+        undo_rejected = self.client.put(
+            f"/api/teacher/credentials/{credential['id']}/review",
+            json={"status": "pending"},
+            headers=teacher_headers,
+        )
+        self.assertEqual(undo_rejected.status_code, 200)
+        pending_file = next(
+            item
+            for item in self.client.get(
+                "/api/student/files", headers=student_headers
+            ).get_json()["files"]
+            if item["id"] == credential["id"]
+        )
+        self.assertEqual(pending_file["status"], "pending")
+        self.assertEqual(pending_file["review_comment"], "")
+        self.assertIsNone(pending_file["reviewer_name"])
+
+        rejected = self.client.put(
+            f"/api/teacher/credentials/{credential['id']}/review",
+            json={"status": "rejected", "comment": "请补充清晰的获奖日期"},
+            headers=teacher_headers,
+        )
+        self.assertEqual(rejected.status_code, 200)
+
         resubmitted = self.client.post(
             f"/api/student/files/{credential['id']}/resubmit",
             data={
@@ -99,6 +123,29 @@ class ApiFlowTest(unittest.TestCase):
         )
         self.assertEqual(resubmitted.status_code, 200)
         self.assertEqual(resubmitted.get_json()["files"][0]["status"], "pending")
+
+        approved = self.client.put(
+            f"/api/teacher/credentials/{credential['id']}/review",
+            json={"status": "approved", "comment": "材料清晰"},
+            headers=teacher_headers,
+        )
+        self.assertEqual(approved.status_code, 200)
+        undo_approved = self.client.put(
+            f"/api/teacher/credentials/{credential['id']}/review",
+            json={"status": "pending"},
+            headers=teacher_headers,
+        )
+        self.assertEqual(undo_approved.status_code, 200)
+        pending_file = next(
+            item
+            for item in self.client.get(
+                "/api/student/files", headers=student_headers
+            ).get_json()["files"]
+            if item["id"] == credential["id"]
+        )
+        self.assertEqual(pending_file["status"], "pending")
+        self.assertEqual(pending_file["review_comment"], "")
+        self.assertIsNone(pending_file["reviewer_name"])
 
         preview = self.client.get(
             f"/api/files/{credential['id']}?preview=1", headers=student_headers

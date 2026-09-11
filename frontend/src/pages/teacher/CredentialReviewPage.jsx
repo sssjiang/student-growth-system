@@ -66,13 +66,12 @@ function CredentialReviewPage() {
         comment
       );
       setReview(null);
-      notify(
-        t(
-          review.status === 'approved'
-            ? 'review.approvedNotice'
-            : 'review.rejectedNotice'
-        )
-      );
+      const notice = {
+        approved: 'review.approvedNotice',
+        pending: 'review.undoNotice',
+        rejected: 'review.rejectedNotice',
+      };
+      notify(t(notice[review.status]));
       load();
     } catch (err) {
       notify(err.message);
@@ -160,6 +159,15 @@ function CredentialReviewPage() {
                     </button>
                   </>
                 )}
+                {credential.status !== 'pending' && (
+                  <button
+                    className="secondary"
+                    onClick={() => openReview(credential, 'pending')}
+                  >
+                    <RotateCcw size={15} />
+                    {t('review.undo')}
+                  </button>
+                )}
               </div>
               {credential.review_comment && (
                 <div className="review-row-comment">
@@ -190,9 +198,11 @@ function CredentialReviewPage() {
       {review && (
         <Modal
           title={t(
-            review.status === 'approved'
-              ? 'review.approveTitle'
-              : 'review.rejectTitle'
+            {
+              approved: 'review.approveTitle',
+              pending: 'review.undoTitle',
+              rejected: 'review.rejectTitle',
+            }[review.status]
           )}
           onClose={() => setReview(null)}
           size="sm"
@@ -204,37 +214,45 @@ function CredentialReviewPage() {
               {review.credential.original_name}
             </span>
           </div>
-          <label className="field">
-            <span>
-              {t('review.commentLabel')}
-              {review.status === 'rejected' && t('review.required')}
-            </span>
-            <textarea
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              placeholder={
-                review.status === 'approved'
-                  ? t('review.approvePlaceholder')
-                  : t('review.rejectPlaceholder')
-              }
-            />
-          </label>
+          {review.status === 'pending' ? (
+            <p className="review-undo-hint">{t('review.undoHint')}</p>
+          ) : (
+            <label className="field">
+              <span>
+                {t('review.commentLabel')}
+                {review.status === 'rejected' && t('review.required')}
+              </span>
+              <textarea
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                placeholder={
+                  review.status === 'approved'
+                    ? t('review.approvePlaceholder')
+                    : t('review.rejectPlaceholder')
+                }
+              />
+            </label>
+          )}
           <div className="modal-actions">
             <button className="secondary" onClick={() => setReview(null)}>
               {t('common.cancel')}
             </button>
             <button
               className={
-                review.status === 'approved' ? 'primary' : 'danger-button'
+                review.status === 'rejected' ? 'danger-button' : 'primary'
               }
               disabled={loading}
               onClick={submitReview}
             >
               {loading
                 ? t('common.saving')
-                : review.status === 'approved'
-                  ? t('review.confirmApprove')
-                  : t('review.confirmReject')}
+                : t(
+                    {
+                      approved: 'review.confirmApprove',
+                      pending: 'review.confirmUndo',
+                      rejected: 'review.confirmReject',
+                    }[review.status]
+                  )}
             </button>
           </div>
         </Modal>
