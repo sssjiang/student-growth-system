@@ -27,10 +27,13 @@ student-growth-system/
 │       └── grade_report.py       # 回归计算与报告生成
 ├── frontend/                     # React + Vite
 │   └── src/
-│       ├── components/           # 应用布局等公共组件
-│       └── pages/
-│           ├── teacher/          # 工作台、检索、档案、导入、报告详情
-│           └── student/          # 个人资料、成绩、成长材料
+│       ├── api/                  # 按 Auth/Student/Teacher 领域封装
+│       ├── components/           # 单一职责公共组件与应用布局
+│       ├── contexts/             # 登录状态与全局提示
+│       ├── pages/
+│       │   ├── teacher/          # 工作台、检索、档案、导入、报告详情
+│       │   └── student/          # 个人资料、成绩、成长材料
+│       └── routes.jsx            # 路由和角色权限配置
 └── docker-compose.yml
 ```
 
@@ -103,6 +106,8 @@ cd backend
 python -m unittest discover -s tests -v
 
 cd ../frontend
+npm run lint
+npm run format:check
 npm run build
 ```
 
