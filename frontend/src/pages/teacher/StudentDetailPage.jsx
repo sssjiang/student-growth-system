@@ -1,43 +1,49 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Sparkles, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { TeacherAPI } from '@/api';
 import { Avatar, Empty, TrendChart } from '@/components';
 import { useToast } from '@/contexts/ToastContext';
 
 function ReportView({ data }) {
+  const { t } = useTranslation();
   const { report, metrics } = data;
   return (
     <section className="report-section">
       <div className="report-heading">
         <div>
-          <span className="eyebrow">个性化成长报告</span>
-          <h2>{data.student?.name}的学习趋势洞察</h2>
+          <span className="eyebrow">{t('detail.reportEyebrow')}</span>
+          <h2>{t('detail.reportTitle', { name: data.student?.name })}</h2>
         </div>
         <span className="report-source">
           {data.generated_by?.startsWith('local')
-            ? '本地分析生成'
-            : 'OpenAI 兼容模型辅助生成'}
+            ? t('detail.localSource')
+            : t('detail.aiSource')}
         </span>
       </div>
       <div className="insight-grid">
         <article className="insight lead">
           <Sparkles />
-          <h3>综合观察</h3>
+          <h3>{t('detail.overview')}</h3>
           <p>{report.summary}</p>
         </article>
         {metrics && (
           <article className="insight metric">
             <Target />
-            <small>综合均分</small>
+            <small>{t('detail.overallAverage')}</small>
             <strong>{metrics.overall.average}</strong>
-            <span>下学期预测 {metrics.overall.prediction}</span>
+            <span>
+              {t('detail.prediction', {
+                value: metrics.overall.prediction,
+              })}
+            </span>
           </article>
         )}
       </div>
       <div className="report-columns">
         <article className="card">
-          <h3>值得肯定的变化</h3>
+          <h3>{t('detail.highlights')}</h3>
           {report.highlights.map((item, index) => (
             <p className="numbered" key={item}>
               <span>{index + 1}</span>
@@ -46,7 +52,7 @@ function ReportView({ data }) {
           ))}
         </article>
         <article className="card">
-          <h3>下一步行动建议</h3>
+          <h3>{t('detail.suggestions')}</h3>
           {report.suggestions.map((item, index) => (
             <p className="numbered warm" key={item}>
               <span>{index + 1}</span>
@@ -61,6 +67,7 @@ function ReportView({ data }) {
 }
 
 function StudentDetailPage() {
+  const { t } = useTranslation();
   const { studentId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -88,14 +95,14 @@ function StudentDetailPage() {
     try {
       const data = await TeacherAPI.createStudentReport(studentId);
       setReport(data);
-      notify('成长报告已生成');
+      notify(t('detail.generated'));
     } catch (err) {
       notify(err.message);
     } finally {
       setLoading(false);
     }
   };
-  if (!student) return <Empty>正在加载学生档案…</Empty>;
+  if (!student) return <Empty>{t('detail.loading')}</Empty>;
   return (
     <>
       <button
@@ -103,7 +110,7 @@ function StudentDetailPage() {
         onClick={() => navigate('/teacher/students')}
       >
         <ArrowLeft />
-        返回学生列表
+        {t('detail.back')}
       </button>
       <div className="student-banner">
         <Avatar name={student.name} />
@@ -119,27 +126,27 @@ function StudentDetailPage() {
         </div>
         <button className="primary" onClick={generate} disabled={loading}>
           <Sparkles size={17} />
-          {loading ? '正在分析…' : '生成 AI 成长报告'}
+          {loading ? t('detail.analyzing') : t('detail.generate')}
         </button>
       </div>
       <div className="report-layout">
         <section className="card span-2">
           <div className="card-head">
             <div>
-              <h3>成绩发展轨迹</h3>
-              <p>{grades.length} 个学期 · 四科成绩变化</p>
+              <h3>{t('detail.trajectory')}</h3>
+              <p>{t('detail.periods', { count: grades.length })}</p>
             </div>
           </div>
           <TrendChart grades={grades} />
         </section>
         <section className="card profile-summary">
-          <h3>兴趣与特长</h3>
+          <h3>{t('detail.interests')}</h3>
           <div className="large-tags">
             {(student.tags_list || []).map((tag) => (
               <span key={tag}>{tag}</span>
             ))}
           </div>
-          <p>{student.description || student.bio || '暂无兴趣描述'}</p>
+          <p>{student.description || student.bio || t('detail.noInterests')}</p>
         </section>
       </div>
       {report ? (
@@ -148,11 +155,11 @@ function StudentDetailPage() {
         <section className="card no-report">
           <Sparkles />
           <div>
-            <h3>还没有生成成长报告</h3>
-            <p>系统将先计算真实成绩趋势，再用 AI 转写为清晰建议。</p>
+            <h3>{t('detail.noReport')}</h3>
+            <p>{t('detail.noReportDesc')}</p>
           </div>
           <button className="secondary" onClick={generate}>
-            现在生成
+            {t('detail.generateNow')}
           </button>
         </section>
       )}

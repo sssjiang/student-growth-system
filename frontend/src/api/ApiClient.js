@@ -1,4 +1,33 @@
+import i18n from '@/locales/i18n';
+
 const API_ROOT = import.meta.env.VITE_API_ROOT || '/api';
+const ERROR_KEYS = {
+  请先登录: 'signInRequired',
+  '登录已过期，请重新登录': 'sessionExpired',
+  无效的登录凭证: 'invalidToken',
+  用户不存在: 'userMissing',
+  没有访问此资源的权限: 'forbidden',
+  '请填写用户名、密码、姓名和学号': 'registrationRequired',
+  '密码至少需要 6 位': 'passwordLength',
+  用户名或学号已存在: 'accountExists',
+  用户名或密码错误: 'invalidCredentials',
+  未找到学生资料: 'profileMissing',
+  请选择文件: 'selectFile',
+  凭证不存在: 'credentialMissing',
+  只有被驳回的凭证可以重新提交: 'resubmitRejectedOnly',
+  审核状态不正确: 'invalidReviewStatus',
+  请选择通过或驳回: 'selectReviewResult',
+  驳回时请填写审核意见: 'rejectionCommentRequired',
+  '请描述活动需求，至少输入 2 个字': 'searchTooShort',
+  学生不存在: 'studentMissing',
+  '年份、学期或成绩格式不正确': 'invalidGrades',
+  '请选择 CSV 文件': 'selectCsv',
+  '请上传 UTF-8 编码的 CSV 文件': 'csvEncoding',
+  至少需要两个学期的成绩才能生成趋势报告: 'insufficientGrades',
+  文件不存在: 'fileMissing',
+  没有访问此文件的权限: 'fileForbidden',
+  '文件不能超过 10MB': 'fileTooLarge',
+};
 
 class ApiClient {
   async request(path, options = {}) {
@@ -19,7 +48,12 @@ class ApiClient {
         localStorage.removeItem('student_token');
         localStorage.removeItem('student_user');
       }
-      throw new Error(data.error || '请求失败，请稍后重试');
+      const errorKey = ERROR_KEYS[data.error];
+      throw new Error(
+        errorKey
+          ? i18n.t(`apiErrors.${errorKey}`)
+          : data.error || i18n.t('common.requestFailed')
+      );
     }
 
     return data;
@@ -30,7 +64,7 @@ class ApiClient {
     const response = await fetch(`${API_ROOT}${path}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-    if (!response.ok) throw new Error('文件读取失败，请稍后重试');
+    if (!response.ok) throw new Error(i18n.t('common.fileReadFailed'));
     return response.blob();
   }
 

@@ -1,6 +1,8 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 function Modal({ children, onClose, size = 'md', title }) {
+  const { t } = useTranslation();
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
@@ -12,7 +14,11 @@ function Modal({ children, onClose, size = 'md', title }) {
       >
         <header className="modal-header">
           <h2>{title}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="关闭">
+          <button
+            className="icon-button"
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
             <X size={19} />
           </button>
         </header>

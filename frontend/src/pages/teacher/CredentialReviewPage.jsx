@@ -6,19 +6,21 @@ import {
   RotateCcw,
   XCircle,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TeacherAPI } from '@/api';
 import { Empty, FilePreviewModal, Modal, PageTitle } from '@/components';
 import { useToast } from '@/contexts/ToastContext';
 import { canPreview, formatFileSize } from '@/utils/files';
 
 const FILTERS = [
-  { key: 'pending', label: '待审核' },
-  { key: 'approved', label: '已通过' },
-  { key: 'rejected', label: '已驳回' },
-  { key: '', label: '全部' },
+  { key: 'pending', label: 'review.pending' },
+  { key: 'approved', label: 'review.approved' },
+  { key: 'rejected', label: 'review.rejected' },
+  { key: '', label: 'review.all' },
 ];
 
 function CredentialReviewPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const [filter, setFilter] = useState('pending');
   const [credentials, setCredentials] = useState([]);
@@ -31,6 +33,9 @@ function CredentialReviewPage() {
   const [review, setReview] = useState(null);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const statusLabel = (status) =>
+    t(FILTERS.find((item) => item.key === status)?.label || 'review.all');
 
   const load = useCallback(() => {
     TeacherAPI.getCredentials(filter).then((data) => {
@@ -50,7 +55,7 @@ function CredentialReviewPage() {
 
   const submitReview = async () => {
     if (review.status === 'rejected' && !comment.trim()) {
-      notify('请填写驳回原因，帮助学生正确修改');
+      notify(t('review.reasonRequired'));
       return;
     }
     setLoading(true);
@@ -61,7 +66,13 @@ function CredentialReviewPage() {
         comment
       );
       setReview(null);
-      notify(review.status === 'approved' ? '凭证已审核通过' : '凭证已驳回');
+      notify(
+        t(
+          review.status === 'approved'
+            ? 'review.approvedNotice'
+            : 'review.rejectedNotice'
+        )
+      );
       load();
     } catch (err) {
       notify(err.message);
@@ -73,9 +84,9 @@ function CredentialReviewPage() {
   return (
     <>
       <PageTitle
-        eyebrow="凭证审核"
-        title="确认学生的每一份成长"
-        description="预览学生提交的荣誉材料，记录审核意见并跟踪重新提交。"
+        eyebrow={t('review.eyebrow')}
+        title={t('review.title')}
+        description={t('review.description')}
       />
       <div className="review-tabs">
         {FILTERS.map((item) => (
@@ -84,7 +95,7 @@ function CredentialReviewPage() {
             className={filter === item.key ? 'active' : ''}
             onClick={() => setFilter(item.key)}
           >
-            {item.label}
+            {t(item.label)}
             {item.key && <span>{counts[item.key]}</span>}
           </button>
         ))}
@@ -99,12 +110,13 @@ function CredentialReviewPage() {
               <div className="review-main">
                 <div>
                   <span className={`status-pill ${credential.status}`}>
-                    {
-                      FILTERS.find((item) => item.key === credential.status)
-                        ?.label
-                    }
+                    {statusLabel(credential.status)}
                   </span>
-                  <em>{credential.credential_type}</em>
+                  <em>
+                    {t(`credentialTypes.${credential.credential_type}`, {
+                      defaultValue: credential.credential_type,
+                    })}
+                  </em>
                 </div>
                 <h3>{credential.title}</h3>
                 <p>
@@ -114,9 +126,9 @@ function CredentialReviewPage() {
                 </p>
               </div>
               <div className="review-meta">
-                <span>{credential.issuer || '未填写颁发机构'}</span>
+                <span>{credential.issuer || t('common.noIssuer')}</span>
                 <small>
-                  {credential.awarded_at || '未填写日期'} ·{' '}
+                  {credential.awarded_at || t('common.noDate')} ·{' '}
                   {formatFileSize(credential.size)}
                 </small>
               </div>
@@ -127,7 +139,7 @@ function CredentialReviewPage() {
                     onClick={() => setPreview(credential)}
                   >
                     <Eye size={15} />
-                    预览
+                    {t('common.preview')}
                   </button>
                 )}
                 {credential.status === 'pending' && (
@@ -137,14 +149,14 @@ function CredentialReviewPage() {
                       onClick={() => openReview(credential, 'approved')}
                     >
                       <CheckCircle2 size={15} />
-                      通过
+                      {t('review.approve')}
                     </button>
                     <button
                       className="reject-button"
                       onClick={() => openReview(credential, 'rejected')}
                     >
                       <XCircle size={15} />
-                      驳回
+                      {t('review.reject')}
                     </button>
                   </>
                 )}
@@ -152,14 +164,18 @@ function CredentialReviewPage() {
               {credential.review_comment && (
                 <div className="review-row-comment">
                   <RotateCcw size={14} />
-                  审核意见：{credential.review_comment}
+                  {t('review.comment', {
+                    comment: credential.review_comment,
+                  })}
                 </div>
               )}
             </article>
           ))
         ) : (
           <Empty>
-            当前没有{FILTERS.find((item) => item.key === filter)?.label}凭证
+            {t('review.empty', {
+              status: statusLabel(filter),
+            })}
           </Empty>
         )}
       </section>
@@ -173,7 +189,11 @@ function CredentialReviewPage() {
       )}
       {review && (
         <Modal
-          title={review.status === 'approved' ? '确认审核通过' : '填写驳回原因'}
+          title={t(
+            review.status === 'approved'
+              ? 'review.approveTitle'
+              : 'review.rejectTitle'
+          )}
           onClose={() => setReview(null)}
           size="sm"
         >
@@ -185,20 +205,23 @@ function CredentialReviewPage() {
             </span>
           </div>
           <label className="field">
-            <span>审核意见{review.status === 'rejected' && '（必填）'}</span>
+            <span>
+              {t('review.commentLabel')}
+              {review.status === 'rejected' && t('review.required')}
+            </span>
             <textarea
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               placeholder={
                 review.status === 'approved'
-                  ? '可填写鼓励或补充说明'
-                  : '请明确说明需要修改或补充的内容'
+                  ? t('review.approvePlaceholder')
+                  : t('review.rejectPlaceholder')
               }
             />
           </label>
           <div className="modal-actions">
             <button className="secondary" onClick={() => setReview(null)}>
-              取消
+              {t('common.cancel')}
             </button>
             <button
               className={
@@ -208,10 +231,10 @@ function CredentialReviewPage() {
               onClick={submitReview}
             >
               {loading
-                ? '正在保存…'
+                ? t('common.saving')
                 : review.status === 'approved'
-                  ? '确认通过'
-                  : '确认驳回'}
+                  ? t('review.confirmApprove')
+                  : t('review.confirmReject')}
             </button>
           </div>
         </Modal>

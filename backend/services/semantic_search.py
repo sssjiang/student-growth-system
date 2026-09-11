@@ -126,7 +126,10 @@ def search_students(query: str, students: list[dict], limit: int = 20):
         result.pop("embedding", None)
         result.pop("embedding_model", None)
         result["score"] = round(max(0.0, score), 4)
-        result["match_reason"] = _match_reason(query, item)
+        reason = _match_reason(query, item)
+        result["match_reason"] = reason["text"]
+        result["match_reason_code"] = reason["code"]
+        result["match_reason_tags"] = reason["tags"]
         ranked.append(result)
     ranked.sort(key=lambda item: item["score"], reverse=True)
     if engine == "local-keyword-fallback":
@@ -135,11 +138,25 @@ def search_students(query: str, students: list[dict], limit: int = 20):
     return ranked[: max(1, min(limit, 50))], engine, embedding_updates
 
 
-def _match_reason(query: str, student: dict) -> str:
+def _match_reason(query: str, student: dict) -> dict:
     tags = json.loads(student.get("tags") or "[]")
     matched = [tag for tag in tags if any(t in _tokens(query) for t in _tokens(tag))]
     if matched:
-        return f"兴趣标签匹配：{'、'.join(matched[:3])}"
+        selected = matched[:3]
+        return {
+            "text": f"兴趣标签匹配：{'、'.join(selected)}",
+            "code": "tagMatch",
+            "tags": selected,
+        }
     if tags:
-        return f"兴趣语义相近：{'、'.join(tags[:3])}"
-    return "个人描述与活动需求语义相近"
+        selected = tags[:3]
+        return {
+            "text": f"兴趣语义相近：{'、'.join(selected)}",
+            "code": "semanticMatch",
+            "tags": selected,
+        }
+    return {
+        "text": "个人描述与活动需求语义相近",
+        "code": "descriptionMatch",
+        "tags": [],
+    }

@@ -9,11 +9,13 @@ import {
   Upload,
   UsersRound,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { TeacherAPI } from '@/api';
 import { Empty, PageTitle, StatCard, StudentRow } from '@/components';
 
 function TeacherDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   useEffect(() => {
@@ -32,16 +34,16 @@ function TeacherDashboard() {
   return (
     <>
       <PageTitle
-        eyebrow="上午好，王老师"
-        title="今天也一起关注学生的成长"
-        description="这里汇总了班级的最新动态与待办事项。"
+        eyebrow={t('dashboard.greeting')}
+        title={t('dashboard.title')}
+        description={t('dashboard.description')}
         action={
           <button
             className="primary"
             onClick={() => navigate('/teacher/search')}
           >
             <Sparkles size={17} />
-            智能匹配学生
+            {t('dashboard.smartMatch')}
           </button>
         }
       />
@@ -49,29 +51,29 @@ function TeacherDashboard() {
         <StatCard
           icon={UsersRound}
           value={stats.students}
-          label="学生档案"
-          note="资料持续完善中"
+          label={t('dashboard.students')}
+          note={t('dashboard.studentsNote')}
           tone="green"
         />
         <StatCard
           icon={BookOpen}
           value={stats.classes}
-          label="覆盖班级"
-          note="当前学年"
+          label={t('dashboard.classes')}
+          note={t('dashboard.classesNote')}
           tone="orange"
         />
         <StatCard
           icon={BarChart3}
           value={stats.grade_records}
-          label="成绩记录"
-          note="跨学期趋势数据"
+          label={t('dashboard.records')}
+          note={t('dashboard.recordsNote')}
           tone="purple"
         />
         <StatCard
           icon={FileText}
           value={stats.reports}
-          label="成长报告"
-          note="已生成个性化分析"
+          label={t('dashboard.reports')}
+          note={t('dashboard.reportsNote')}
           tone="gold"
         />
       </div>
@@ -79,14 +81,14 @@ function TeacherDashboard() {
         <section className="card span-2">
           <div className="card-head">
             <div>
-              <h3>最近学生</h3>
-              <p>快速查看学生档案与成绩趋势</p>
+              <h3>{t('dashboard.recent')}</h3>
+              <p>{t('dashboard.recentDesc')}</p>
             </div>
             <button
               className="text-button"
               onClick={() => navigate('/teacher/students')}
             >
-              查看全部 <ChevronRight size={16} />
+              {t('dashboard.viewAll')} <ChevronRight size={16} />
             </button>
           </div>
           <div className="student-list">
@@ -96,14 +98,14 @@ function TeacherDashboard() {
                 student={student}
                 onOpen={openStudent}
               />
-            )) || <Empty>正在加载学生数据…</Empty>}
+            )) || <Empty>{t('dashboard.loading')}</Empty>}
           </div>
         </section>
         <section className="card quick-card">
           <div className="card-head">
             <div>
-              <h3>快捷操作</h3>
-              <p>从这里开始今日工作</p>
+              <h3>{t('dashboard.quick')}</h3>
+              <p>{t('dashboard.quickDesc')}</p>
             </div>
           </div>
           <button onClick={() => navigate('/teacher/search')}>
@@ -111,8 +113,8 @@ function TeacherDashboard() {
               <Search />
             </span>
             <span>
-              <b>寻找活动人选</b>
-              <small>用自然语言描述需求</small>
+              <b>{t('dashboard.find')}</b>
+              <small>{t('dashboard.findDesc')}</small>
             </span>
             <ChevronRight />
           </button>
@@ -121,8 +123,8 @@ function TeacherDashboard() {
               <Upload />
             </span>
             <span>
-              <b>导入成绩数据</b>
-              <small>支持标准 CSV 文件</small>
+              <b>{t('dashboard.import')}</b>
+              <small>{t('dashboard.importDesc')}</small>
             </span>
             <ChevronRight />
           </button>
@@ -131,8 +133,8 @@ function TeacherDashboard() {
               <FileText />
             </span>
             <span>
-              <b>生成成长报告</b>
-              <small>基于真实成绩趋势</small>
+              <b>{t('dashboard.report')}</b>
+              <small>{t('dashboard.reportDesc')}</small>
             </span>
             <ChevronRight />
           </button>

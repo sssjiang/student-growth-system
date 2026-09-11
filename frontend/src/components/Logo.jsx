@@ -1,11 +1,14 @@
+import { useTranslation } from 'react-i18next';
+
 function Logo({ compact = false }) {
+  const { t } = useTranslation();
   return (
     <div className={`logo ${compact ? 'compact' : ''}`}>
-      <span className="logo-mark">知</span>
+      <span className="logo-mark">{t('brand.mark')}</span>
       {!compact && (
         <span>
-          <b>知行</b>
-          <small>学生成长中心</small>
+          <b>{t('brand.name')}</b>
+          <small>{t('brand.subtitle')}</small>
         </span>
       )}
     </div>

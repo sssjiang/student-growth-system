@@ -13,7 +13,8 @@
 - 纯 Python 线性回归趋势计算，所有预测数字先由程序得出
 - 本地 `sentence-transformers` 中文语义检索；模型不可用时自动使用离线关键词相似度
 - LangGraph 编排成绩计算与 OpenAI 兼容模型报告；没有 API Key 时生成完整的本地规则报告
-- 响应式中文界面、成绩折线图和演示数据
+- 响应式界面、成绩折线图和演示数据
+- 英语、粤语和简体中文界面，语言选择会保存在浏览器中
 
 ## 目录
 
@@ -119,6 +120,7 @@ python -m unittest discover -s tests -v
 
 cd ../frontend
 npm run lint
+npm run i18n:check
 npm run format:check
 npm run build
 ```

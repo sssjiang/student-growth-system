@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import EmptyState from './EmptyState';
 
 const COLORS = {
@@ -5,12 +6,6 @@ const COLORS = {
   math: '#476a57',
   english: '#6f76a8',
   politics: '#d4a72c',
-};
-const LABELS = {
-  chinese: '语文',
-  math: '数学',
-  english: '英语',
-  politics: '政治',
 };
 const DEFAULT_SUBJECTS = ['chinese', 'math', 'english', 'politics'];
 const WIDTH = 720;
@@ -21,7 +16,8 @@ const CHART_WIDTH = 640;
 const CHART_HEIGHT = 190;
 
 function TrendChart({ grades = [], subjects = DEFAULT_SUBJECTS }) {
-  if (!grades.length) return <EmptyState>暂无成绩数据</EmptyState>;
+  const { t } = useTranslation();
+  if (!grades.length) return <EmptyState>{t('grades.empty')}</EmptyState>;
 
   const x = (index) =>
     grades.length === 1
@@ -34,7 +30,7 @@ function TrendChart({ grades = [], subjects = DEFAULT_SUBJECTS }) {
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
-        aria-label="成绩趋势折线图"
+        aria-label={t('grades.chartLabel')}
       >
         {[60, 70, 80, 90, 100].map((value) => (
           <g key={value}>
@@ -93,7 +89,7 @@ function TrendChart({ grades = [], subjects = DEFAULT_SUBJECTS }) {
         {subjects.map((subject) => (
           <span key={subject}>
             <i style={{ background: COLORS[subject] }} />
-            {LABELS[subject]}
+            {t(`subjects.${subject}`)}
           </span>
         ))}
       </div>

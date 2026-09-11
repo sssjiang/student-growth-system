@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Check, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TeacherAPI } from '@/api';
 import { PageTitle } from '@/components';
 import { useToast } from '@/contexts/ToastContext';
 
 function GradeImportPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -15,7 +17,7 @@ function GradeImportPage() {
     try {
       const data = await TeacherAPI.importGrades(file);
       setResult(data);
-      notify(data.message);
+      notify(t('gradeImport.success', { count: data.imported }));
     } catch (err) {
       notify(err.message);
     } finally {
@@ -25,9 +27,9 @@ function GradeImportPage() {
   return (
     <>
       <PageTitle
-        eyebrow="成绩管理"
-        title="导入原始成绩数据"
-        description="使用统一模板批量录入各学期的语文、数学、英语和政治成绩。"
+        eyebrow={t('gradeImport.eyebrow')}
+        title={t('gradeImport.title')}
+        description={t('gradeImport.description')}
       />
       <div className="two-column">
         <section className="card upload-card">
@@ -35,10 +37,10 @@ function GradeImportPage() {
             <span>
               <Upload />
             </span>
-            <h3>{file?.name || '拖放 CSV 文件到这里'}</h3>
-            <p>UTF-8 编码，单个文件不超过 10MB</p>
+            <h3>{file?.name || t('gradeImport.drop')}</h3>
+            <p>{t('gradeImport.hint')}</p>
             <label className="secondary">
-              选择文件
+              {t('gradeImport.choose')}
               <input
                 type="file"
                 accept=".csv"
@@ -52,34 +54,36 @@ function GradeImportPage() {
             disabled={!file || loading}
             onClick={submit}
           >
-            {loading ? '正在导入…' : '确认导入'}
+            {loading ? t('gradeImport.importing') : t('gradeImport.confirm')}
           </button>
           {result && (
             <div className="success-box">
-              <Check /> {result.message}
+              <Check /> {t('gradeImport.success', { count: result.imported })}
               {result.skipped_rows?.length > 0 &&
-                `，跳过第 ${result.skipped_rows.join('、')} 行`}
+                t('gradeImport.skipped', {
+                  rows: result.skipped_rows.join(', '),
+                })}
             </div>
           )}
         </section>
         <section className="card guide">
-          <h3>CSV 字段说明</h3>
-          <p>首行必须包含以下英文列名：</p>
+          <h3>{t('gradeImport.guide')}</h3>
+          <p>{t('gradeImport.columns')}</p>
           <code>
             student_no, year, semester,
             <br />
             chinese, math, english, politics
           </code>
           <ul>
-            <li>student_no：已存在的学生学号</li>
-            <li>semester：填写 1 或 2</li>
-            <li>四科成绩：0–100 之间的数字</li>
+            <li>{t('gradeImport.studentNo')}</li>
+            <li>{t('gradeImport.semester')}</li>
+            <li>{t('gradeImport.scores')}</li>
           </ul>
           <a
             download="grades-template.csv"
             href="data:text/csv;charset=utf-8,%EF%BB%BFstudent_no,year,semester,chinese,math,english,politics%0A2026001,2026,1,88,90,86,84"
           >
-            下载 CSV 示例模板
+            {t('gradeImport.download')}
           </a>
         </section>
       </div>

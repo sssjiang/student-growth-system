@@ -244,6 +244,42 @@ button {
   margin: 8px 0 0;
   font-size: 14px;
 }
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.language-switcher select {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 36px;
+  padding: 0 28px 0 10px;
+  outline: 0;
+  cursor: pointer;
+}
+.language-switcher select:focus {
+  border-color: #6e947f;
+  box-shadow: 0 0 0 3px #e7f0ea;
+}
+.language-switcher.compact > span {
+  display: none;
+}
+.topbar > .language-switcher {
+  margin-left: auto;
+}
+.topbar > .user-chip {
+  margin-left: 18px;
+}
+.login-language {
+  position: absolute;
+  right: 28px;
+  top: 24px;
+}
 .primary,
 .secondary {
   border: 0;
@@ -1195,6 +1231,7 @@ button {
   bottom: 80px;
 }
 .login-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;

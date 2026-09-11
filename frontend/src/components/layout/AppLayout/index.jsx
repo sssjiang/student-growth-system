@@ -13,26 +13,40 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Avatar, Logo } from '@/components';
+import { Avatar, LanguageSwitcher, Logo } from '@/components';
 
 const NAV_ITEMS = {
   teacher: [
-    { label: '工作台', path: '/teacher/dashboard', icon: LayoutDashboard },
-    { label: '智能匹配', path: '/teacher/search', icon: Search },
-    { label: '学生档案', path: '/teacher/students', icon: UsersRound },
-    { label: '凭证审核', path: '/teacher/credentials', icon: BadgeCheck },
-    { label: '成绩管理', path: '/teacher/grades/import', icon: ClipboardList },
+    {
+      label: 'nav.dashboard',
+      path: '/teacher/dashboard',
+      icon: LayoutDashboard,
+    },
+    { label: 'nav.smartMatch', path: '/teacher/search', icon: Search },
+    { label: 'nav.students', path: '/teacher/students', icon: UsersRound },
+    {
+      label: 'nav.credentialReview',
+      path: '/teacher/credentials',
+      icon: BadgeCheck,
+    },
+    {
+      label: 'nav.gradeManagement',
+      path: '/teacher/grades/import',
+      icon: ClipboardList,
+    },
   ],
   student: [
-    { label: '我的档案', path: '/student/profile', icon: UserRound },
-    { label: '我的成绩', path: '/student/grades', icon: BarChart3 },
-    { label: '成长材料', path: '/student/files', icon: FileText },
+    { label: 'nav.myProfile', path: '/student/profile', icon: UserRound },
+    { label: 'nav.myGrades', path: '/student/grades', icon: BarChart3 },
+    { label: 'nav.materials', path: '/student/files', icon: FileText },
   ],
 };
 
 function AppLayout({ children }) {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -55,12 +69,20 @@ function AppLayout({ children }) {
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="side-top">
           <Logo />
-          <button className="mobile-close" onClick={() => setMenuOpen(false)}>
+          <button
+            className="mobile-close"
+            onClick={() => setMenuOpen(false)}
+            aria-label={t('nav.closeMenu')}
+          >
             <X />
           </button>
         </div>
         <div className="role-label">
-          {user.role === 'teacher' ? '教师工作空间' : '学生成长空间'}
+          {t(
+            user.role === 'teacher'
+              ? 'nav.teacherWorkspace'
+              : 'nav.studentWorkspace'
+          )}
         </div>
         <nav>
           {items.map(({ icon: Icon, label, path }) => {
@@ -72,7 +94,7 @@ function AppLayout({ children }) {
                 onClick={() => handleNavigate(path)}
               >
                 <Icon size={19} />
-                <span>{label}</span>
+                <span>{t(label)}</span>
                 {active && <i />}
               </button>
             );
@@ -81,11 +103,11 @@ function AppLayout({ children }) {
         <div className="side-foot">
           <button>
             <Settings size={18} />
-            系统设置
+            {t('nav.settings')}
           </button>
           <button onClick={handleSignOut}>
             <LogOut size={18} />
-            退出登录
+            {t('nav.signOut')}
           </button>
         </div>
       </aside>
@@ -96,21 +118,34 @@ function AppLayout({ children }) {
 
       <main className="main">
         <div className="topbar">
-          <button className="menu-button" onClick={() => setMenuOpen(true)}>
+          <button
+            className="menu-button"
+            onClick={() => setMenuOpen(true)}
+            aria-label={t('nav.openMenu')}
+          >
             <Menu />
           </button>
           <div className="topbar-context">
             <span>
-              {user.role === 'teacher' ? '教学管理中心' : '个人成长中心'}
+              {t(
+                user.role === 'teacher'
+                  ? 'nav.teacherCenter'
+                  : 'nav.studentCenter'
+              )}
             </span>
-            <b>{currentItem?.label}</b>
+            <b>{currentItem && t(currentItem.label)}</b>
           </div>
+          <LanguageSwitcher compact />
           <div className="user-chip">
             <Avatar name={user.name} size="sm" />
             <span>
               <b>{user.name}</b>
               <small>
-                {user.role === 'teacher' ? '班主任 · 教师' : '在校学生'}
+                {t(
+                  user.role === 'teacher'
+                    ? 'nav.teacherRole'
+                    : 'nav.studentRole'
+                )}
               </small>
             </span>
           </div>

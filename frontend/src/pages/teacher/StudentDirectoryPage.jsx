@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { TeacherAPI } from '@/api';
 import { PageTitle, StudentRow } from '@/components';
 
 function StudentDirectoryPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [filter, setFilter] = useState('');
@@ -21,9 +23,9 @@ function StudentDirectoryPage() {
   return (
     <>
       <PageTitle
-        eyebrow="学生档案"
-        title="了解每一位学生"
-        description={`共 ${students.length} 份成长档案，汇集基本信息、兴趣特长与学习轨迹。`}
+        eyebrow={t('directory.eyebrow')}
+        title={t('directory.title')}
+        description={t('directory.description', { count: students.length })}
       />
       <section className="card">
         <div className="directory-tools">
@@ -32,10 +34,10 @@ function StudentDirectoryPage() {
             <input
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
-              placeholder="搜索姓名、学号、班级或兴趣…"
+              placeholder={t('directory.placeholder')}
             />
           </div>
-          <span>{shown.length} 位学生</span>
+          <span>{t('directory.count', { count: shown.length })}</span>
         </div>
         <div className="student-list directory">
           {shown.map((student) => (

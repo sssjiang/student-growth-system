@@ -3,6 +3,7 @@ export { default as Empty } from './EmptyState';
 export { default as Field } from './FormField';
 export { default as FilePreviewModal } from './FilePreviewModal';
 export { default as Logo } from './Logo';
+export { default as LanguageSwitcher } from './LanguageSwitcher';
 export { default as Modal } from './Modal';
 export { default as PageTitle } from './PageTitle';
 export { default as StatCard } from './StatCard';

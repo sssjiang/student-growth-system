@@ -29,6 +29,8 @@ class SemanticSearchTest(unittest.TestCase):
         ]
         result, engine, updates = search_students("找擅长体育运动的学生", students)
         self.assertEqual(result[0]["name"], "甲")
+        self.assertEqual(result[0]["match_reason_code"], "tagMatch")
+        self.assertEqual(result[0]["match_reason_tags"], ["篮球"])
         self.assertEqual(engine, "local-keyword-fallback")
         self.assertEqual(updates, [])
 

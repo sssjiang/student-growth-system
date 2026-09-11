@@ -8,19 +8,15 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { StudentAPI } from '@/api';
 import { Empty, FilePreviewModal, Modal, PageTitle } from '@/components';
 import { useToast } from '@/contexts/ToastContext';
 import { canPreview, formatFileSize, saveBlob } from '@/utils/files';
 import CredentialForm from './CredentialForm';
 
-const STATUS = {
-  pending: { label: '待审核', className: 'pending' },
-  approved: { label: '已通过', className: 'approved' },
-  rejected: { label: '已驳回', className: 'rejected' },
-};
-
 function FilesPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const [files, setFiles] = useState([]);
   const [formTarget, setFormTarget] = useState(undefined);
@@ -44,7 +40,7 @@ function FilesPage() {
         : await StudentAPI.uploadFile(file, metadata);
       setFiles(data.files);
       setFormTarget(undefined);
-      notify(formTarget ? '凭证已重新提交审核' : '凭证上传成功，等待老师审核');
+      notify(t(formTarget ? 'files.resubmitted' : 'files.uploaded'));
     } catch (err) {
       notify(err.message);
     } finally {
@@ -60,7 +56,7 @@ function FilesPage() {
         current.filter((item) => item.id !== deleteTarget.id)
       );
       setDeleteTarget(null);
-      notify('凭证已删除');
+      notify(t('files.deleted'));
     } catch (err) {
       notify(err.message);
     } finally {
@@ -85,13 +81,13 @@ function FilesPage() {
   return (
     <>
       <PageTitle
-        eyebrow="成长材料"
-        title="收藏你的每一次收获"
-        description="上传荣誉凭证并跟踪审核进度，通过后将进入正式成长档案。"
+        eyebrow={t('files.eyebrow')}
+        title={t('files.title')}
+        description={t('files.description')}
         action={
           <button className="primary" onClick={() => setFormTarget(null)}>
             <Upload size={17} />
-            上传凭证
+            {t('files.upload')}
           </button>
         }
       />
@@ -99,42 +95,44 @@ function FilesPage() {
       <div className="credential-summary">
         <div>
           <strong>{files.length}</strong>
-          <span>全部凭证</span>
+          <span>{t('files.all')}</span>
         </div>
         <div>
           <strong>{counts.pending}</strong>
-          <span>等待审核</span>
+          <span>{t('files.pendingCount')}</span>
         </div>
         <div>
           <strong>{counts.approved}</strong>
-          <span>审核通过</span>
+          <span>{t('files.approvedCount')}</span>
         </div>
         <div>
           <strong>{counts.rejected}</strong>
-          <span>需要修改</span>
+          <span>{t('files.rejectedCount')}</span>
         </div>
       </div>
 
       {files.length ? (
         <div className="credential-grid">
           {files.map((credential) => {
-            const status = STATUS[credential.status] || STATUS.pending;
+            const status = credential.status || 'pending';
             return (
               <article className="credential-card" key={credential.id}>
                 <div className="credential-card-head">
                   <span className="file-icon">
                     <FileText />
                   </span>
-                  <span className={`status-pill ${status.className}`}>
-                    {status.label}
+                  <span className={`status-pill ${status}`}>
+                    {t(`files.${status}`)}
                   </span>
                 </div>
                 <span className="credential-type">
-                  {credential.credential_type}
+                  {t(`credentialTypes.${credential.credential_type}`, {
+                    defaultValue: credential.credential_type,
+                  })}
                 </span>
                 <h3>{credential.title || credential.original_name}</h3>
                 <p>
-                  {credential.issuer || '未填写颁发机构'}
+                  {credential.issuer || t('common.noIssuer')}
                   {credential.awarded_at && ` · ${credential.awarded_at}`}
                 </p>
                 <div className="credential-file">
@@ -144,14 +142,18 @@ function FilesPage() {
                 </div>
                 {credential.status === 'rejected' && (
                   <div className="review-message">
-                    <b>审核意见</b>
-                    <p>{credential.review_comment || '请核对信息后重新提交'}</p>
+                    <b>{t('files.reviewComment')}</b>
+                    <p>
+                      {credential.review_comment || t('files.reviewFallback')}
+                    </p>
                   </div>
                 )}
                 {credential.status === 'approved' && (
                   <div className="approved-message">
-                    <ShieldCheck size={15} />由{' '}
-                    {credential.reviewer_name || '老师'} 审核通过
+                    <ShieldCheck size={15} />
+                    {t('files.approvedBy', {
+                      name: credential.reviewer_name || t('common.teacher'),
+                    })}
                   </div>
                 )}
                 <div className="credential-actions">
@@ -161,17 +163,17 @@ function FilesPage() {
                   ) && (
                     <button onClick={() => setPreview(credential)}>
                       <Eye size={15} />
-                      预览
+                      {t('common.preview')}
                     </button>
                   )}
                   <button onClick={() => downloadCredential(credential)}>
                     <Download size={15} />
-                    下载
+                    {t('common.download')}
                   </button>
                   {credential.status === 'rejected' && (
                     <button onClick={() => setFormTarget(credential)}>
                       <RotateCcw size={15} />
-                      重新提交
+                      {t('files.resubmit')}
                     </button>
                   )}
                   <button
@@ -179,7 +181,7 @@ function FilesPage() {
                     onClick={() => setDeleteTarget(credential)}
                   >
                     <Trash2 size={15} />
-                    删除
+                    {t('common.delete')}
                   </button>
                 </div>
               </article>
@@ -188,13 +190,13 @@ function FilesPage() {
         </div>
       ) : (
         <section className="card">
-          <Empty>还没有成长材料，上传你的第一份荣誉凭证吧</Empty>
+          <Empty>{t('files.empty')}</Empty>
         </section>
       )}
 
       {formTarget !== undefined && (
         <Modal
-          title={formTarget ? '修改并重新提交' : '上传荣誉凭证'}
+          title={t(formTarget ? 'files.editResubmit' : 'files.uploadTitle')}
           onClose={() => setFormTarget(undefined)}
         >
           <CredentialForm
@@ -214,7 +216,7 @@ function FilesPage() {
       )}
       {deleteTarget && (
         <Modal
-          title="确认删除凭证"
+          title={t('files.deleteTitle')}
           onClose={() => setDeleteTarget(null)}
           size="sm"
         >
@@ -223,20 +225,21 @@ function FilesPage() {
               <Trash2 />
             </span>
             <p>
-              确定删除“{deleteTarget.title || deleteTarget.original_name}
-              ”吗？文件和审核记录都会被永久删除。
+              {t('files.deleteConfirm', {
+                name: deleteTarget.title || deleteTarget.original_name,
+              })}
             </p>
           </div>
           <div className="modal-actions">
             <button className="secondary" onClick={() => setDeleteTarget(null)}>
-              取消
+              {t('common.cancel')}
             </button>
             <button
               className="danger-button"
               disabled={loading}
               onClick={deleteCredential}
             >
-              {loading ? '正在删除…' : '确认删除'}
+              {loading ? t('files.deleting') : t('files.confirmDelete')}
             </button>
           </div>
         </Modal>

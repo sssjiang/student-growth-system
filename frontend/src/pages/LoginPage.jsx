@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ChevronRight, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthAPI } from '@/api';
-import { Field, Logo } from '@/components';
+import { Field, LanguageSwitcher, Logo } from '@/components';
 import { useAuth } from '@/contexts/AuthContext';
 
 function LoginPage() {
+  const { t } = useTranslation();
   const { isAuthenticated, signIn, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -64,107 +66,112 @@ function LoginPage() {
       <section className="login-story">
         <Logo />
         <div className="story-copy">
-          <span className="eyebrow light">每一个成长，都有迹可循</span>
+          <span className="eyebrow light">{t('login.storyEyebrow')}</span>
           <h1>
-            看见学生的
+            {t('login.headline')}
             <br />
-            <em>闪光与成长</em>
+            <em>{t('login.headlineEm')}</em>
           </h1>
-          <p>
-            用数据理解学习轨迹，用兴趣连接每一次机会，让教育建议更有温度、更有依据。
-          </p>
+          <p>{t('login.story')}</p>
         </div>
         <div className="quote-card">
           <Sparkles size={20} />
-          <p>教育不是注满一桶水，而是点燃一把火。</p>
-          <small>— 叶芝</small>
+          <p>{t('login.quote')}</p>
+          <small>{t('login.quoteAuthor')}</small>
         </div>
         <span className="orb one" />
         <span className="orb two" />
       </section>
       <section className="login-panel">
+        <div className="login-language">
+          <LanguageSwitcher />
+        </div>
         <div className="login-box">
           <div className="mobile-logo">
             <Logo />
           </div>
-          <span className="eyebrow">欢迎回来</span>
-          <h2>{mode === 'login' ? '登录知行' : '创建学生账号'}</h2>
+          <span className="eyebrow">{t('login.welcome')}</span>
+          <h2>
+            {t(mode === 'login' ? 'login.signInTitle' : 'login.registerTitle')}
+          </h2>
           <p className="muted">
-            {mode === 'login'
-              ? '进入你的专属成长空间'
-              : '填写基础信息，开启成长记录'}
+            {t(mode === 'login' ? 'login.signInDesc' : 'login.registerDesc')}
           </p>
           <div className="login-tabs">
             <button
               className={mode === 'login' ? 'active' : ''}
               onClick={() => setMode('login')}
             >
-              登录
+              {t('login.signInTab')}
             </button>
             <button
               className={mode === 'register' ? 'active' : ''}
               onClick={() => setMode('register')}
             >
-              学生注册
+              {t('login.registerTab')}
             </button>
           </div>
           <form onSubmit={submit}>
             {mode === 'register' && (
               <div className="form-grid">
-                <Field label="姓名">
+                <Field label={t('login.name')}>
                   <input
                     name="name"
                     value={form.name}
                     onChange={update}
-                    placeholder="真实姓名"
+                    placeholder={t('login.realName')}
                   />
                 </Field>
-                <Field label="学号">
+                <Field label={t('login.studentNo')}>
                   <input
                     name="student_no"
                     value={form.student_no}
                     onChange={update}
-                    placeholder="如 2026007"
+                    placeholder={t('login.studentNoExample')}
                   />
                 </Field>
               </div>
             )}
-            <Field label="用户名">
+            <Field label={t('login.username')}>
               <input
                 name="username"
                 value={form.username}
                 onChange={update}
                 autoComplete="username"
-                placeholder="请输入用户名"
+                placeholder={t('login.usernamePlaceholder')}
               />
             </Field>
-            <Field label="密码">
+            <Field label={t('login.password')}>
               <input
                 name="password"
                 type="password"
                 value={form.password}
                 onChange={update}
                 autoComplete="current-password"
-                placeholder="至少 6 位"
+                placeholder={t('login.passwordPlaceholder')}
               />
             </Field>
             {error && <div className="form-error">{error}</div>}
             <button className="primary wide" disabled={loading}>
-              {loading ? '请稍候…' : mode === 'login' ? '登录系统' : '完成注册'}
+              {loading
+                ? t('login.waiting')
+                : t(mode === 'login' ? 'login.signIn' : 'login.finishRegister')}
               <ChevronRight size={18} />
             </button>
           </form>
           {mode === 'login' && (
             <div className="demo-accounts">
-              <span>快速体验</span>
-              <button onClick={() => demo('teacher')}>教师账号</button>
-              <button onClick={() => demo('student')}>学生账号</button>
+              <span>{t('login.quickDemo')}</span>
+              <button onClick={() => demo('teacher')}>
+                {t('login.teacherAccount')}
+              </button>
+              <button onClick={() => demo('student')}>
+                {t('login.studentAccount')}
+              </button>
             </div>
           )}
         </div>
-        <small className="copyright">
-          © 2026 知行学生成长中心 · 让每一次进步被看见
-        </small>
+        <small className="copyright">{t('login.copyright')}</small>
       </section>
     </div>
   );

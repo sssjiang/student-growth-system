@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FileUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Field } from '@/components';
 import { formatFileSize } from '@/utils/files';
 
@@ -14,6 +15,7 @@ const TYPES = [
 ];
 
 function CredentialForm({ credential, loading, onCancel, onSubmit }) {
+  const { t } = useTranslation();
   const [file, setFile] = useState(null);
   const [form, setForm] = useState({
     title: credential?.title || '',
@@ -29,7 +31,7 @@ function CredentialForm({ credential, loading, onCancel, onSubmit }) {
   const chooseFile = (event) => {
     const nextFile = event.target.files[0];
     if (nextFile && nextFile.size > 10 * 1024 * 1024) {
-      setError('文件不能超过 10MB');
+      setError(t('credentialForm.tooLarge'));
       return;
     }
     setError('');
@@ -38,11 +40,11 @@ function CredentialForm({ credential, loading, onCancel, onSubmit }) {
   const submit = (event) => {
     event.preventDefault();
     if (!form.title.trim() || !form.credential_type) {
-      setError('请填写荣誉名称并选择类型');
+      setError(t('credentialForm.required'));
       return;
     }
     if (!credential && !file) {
-      setError('请选择需要上传的文件');
+      setError(t('credentialForm.fileRequired'));
       return;
     }
     onSubmit(file, form);
@@ -51,35 +53,37 @@ function CredentialForm({ credential, loading, onCancel, onSubmit }) {
   return (
     <form className="credential-form" onSubmit={submit}>
       <div className="form-grid">
-        <Field label="荣誉名称">
+        <Field label={t('credentialForm.title')}>
           <input
             name="title"
             value={form.title}
             onChange={update}
-            placeholder="例如：校园摄影大赛一等奖"
+            placeholder={t('credentialForm.titleExample')}
           />
         </Field>
-        <Field label="荣誉类型">
+        <Field label={t('credentialForm.type')}>
           <select
             name="credential_type"
             value={form.credential_type}
             onChange={update}
           >
-            <option value="">请选择</option>
+            <option value="">{t('common.select')}</option>
             {TYPES.map((type) => (
-              <option key={type}>{type}</option>
+              <option key={type} value={type}>
+                {t(`credentialTypes.${type}`)}
+              </option>
             ))}
           </select>
         </Field>
-        <Field label="颁发机构">
+        <Field label={t('credentialForm.issuer')}>
           <input
             name="issuer"
             value={form.issuer}
             onChange={update}
-            placeholder="学校或主办单位"
+            placeholder={t('credentialForm.issuerPlaceholder')}
           />
         </Field>
-        <Field label="获得日期">
+        <Field label={t('credentialForm.date')}>
           <input
             name="awarded_at"
             type="date"
@@ -88,12 +92,12 @@ function CredentialForm({ credential, loading, onCancel, onSubmit }) {
           />
         </Field>
       </div>
-      <Field label="补充说明">
+      <Field label={t('credentialForm.description')}>
         <textarea
           name="description"
           value={form.description}
           onChange={update}
-          placeholder="简单说明参与过程、作品或收获"
+          placeholder={t('credentialForm.descriptionPlaceholder')}
         />
       </Field>
       <label className="credential-file-picker">
@@ -101,12 +105,12 @@ function CredentialForm({ credential, loading, onCancel, onSubmit }) {
         <span>
           <b>
             {file?.name ||
-              (credential ? '保留原文件，或点击替换' : '点击选择凭证文件')}
+              (credential
+                ? t('credentialForm.keepOrReplace')
+                : t('credentialForm.chooseFile'))}
           </b>
           <small>
-            {file
-              ? formatFileSize(file.size)
-              : '支持 PDF、Word、JPG、PNG、TXT，最大 10MB'}
+            {file ? formatFileSize(file.size) : t('credentialForm.fileHint')}
           </small>
         </span>
         <input
@@ -119,10 +123,14 @@ function CredentialForm({ credential, loading, onCancel, onSubmit }) {
       {error && <div className="form-error">{error}</div>}
       <div className="modal-actions">
         <button type="button" className="secondary" onClick={onCancel}>
-          取消
+          {t('common.cancel')}
         </button>
         <button className="primary" disabled={loading}>
-          {loading ? '正在提交…' : credential ? '重新提交审核' : '提交审核'}
+          {loading
+            ? t('credentialForm.submitting')
+            : t(
+                credential ? 'credentialForm.resubmit' : 'credentialForm.submit'
+              )}
         </button>
       </div>
     </form>

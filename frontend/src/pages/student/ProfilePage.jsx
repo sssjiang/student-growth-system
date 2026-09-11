@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Check, Pencil, Plus, Sparkles, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { StudentAPI } from '@/api';
 import { Empty, Field, PageTitle } from '@/components';
 import { useToast } from '@/contexts/ToastContext';
 
 function ProfilePage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const [form, setForm] = useState(null);
   const [savedProfile, setSavedProfile] = useState(null);
@@ -18,7 +20,7 @@ function ProfilePage() {
       setSavedProfile(profile);
     });
   }, []);
-  if (!form) return <Empty>正在加载个人档案…</Empty>;
+  if (!form) return <Empty>{t('profile.loading')}</Empty>;
   const update = (event) =>
     setForm({ ...form, [event.target.name]: event.target.value });
   const addTag = () => {
@@ -36,7 +38,7 @@ function ProfilePage() {
       setSavedProfile(profile);
       setEditing(false);
       setNewTag('');
-      notify('个人档案已保存');
+      notify(t('profile.saved'));
     } catch (err) {
       notify(err.message);
     } finally {
@@ -51,26 +53,26 @@ function ProfilePage() {
   return (
     <>
       <PageTitle
-        eyebrow="我的档案"
-        title="让老师更了解真实的你"
-        description="完善兴趣与特长，合适的校园活动就更容易找到你。"
+        eyebrow={t('profile.eyebrow')}
+        title={t('profile.title')}
+        description={t('profile.description')}
         action={
           <div className="profile-actions">
             {editing ? (
               <>
                 <button className="secondary" onClick={cancelEditing}>
                   <X size={17} />
-                  取消
+                  {t('common.cancel')}
                 </button>
                 <button className="primary" onClick={save} disabled={saving}>
                   <Check size={17} />
-                  {saving ? '正在保存…' : '保存修改'}
+                  {saving ? t('common.saving') : t('common.save')}
                 </button>
               </>
             ) : (
               <button className="primary" onClick={() => setEditing(true)}>
                 <Pencil size={17} />
-                编辑档案
+                {t('common.edit')}
               </button>
             )}
           </div>
@@ -78,9 +80,9 @@ function ProfilePage() {
       />
       <div className="profile-grid">
         <section className="card">
-          <h3>基本信息</h3>
+          <h3>{t('profile.basic')}</h3>
           <div className="form-grid">
-            <Field label="姓名">
+            <Field label={t('profile.name')}>
               <input
                 name="name"
                 value={form.name}
@@ -88,22 +90,22 @@ function ProfilePage() {
                 disabled={!editing}
               />
             </Field>
-            <Field label="学号">
+            <Field label={t('profile.studentNo')}>
               <input value={form.student_no} disabled />
             </Field>
-            <Field label="性别">
+            <Field label={t('profile.gender')}>
               <select
                 name="gender"
                 value={form.gender}
                 onChange={update}
                 disabled={!editing}
               >
-                <option value="">请选择</option>
-                <option>男</option>
-                <option>女</option>
+                <option value="">{t('common.select')}</option>
+                <option value="男">{t('profile.male')}</option>
+                <option value="女">{t('profile.female')}</option>
               </select>
             </Field>
-            <Field label="年级">
+            <Field label={t('profile.grade')}>
               <input
                 name="grade"
                 value={form.grade}
@@ -111,7 +113,7 @@ function ProfilePage() {
                 disabled={!editing}
               />
             </Field>
-            <Field label="班级">
+            <Field label={t('profile.class')}>
               <input
                 name="class_name"
                 value={form.class_name}
@@ -119,7 +121,7 @@ function ProfilePage() {
                 disabled={!editing}
               />
             </Field>
-            <Field label="生日">
+            <Field label={t('profile.birthday')}>
               <input
                 name="birthday"
                 type="date"
@@ -128,7 +130,7 @@ function ProfilePage() {
                 disabled={!editing}
               />
             </Field>
-            <Field label="邮箱">
+            <Field label={t('profile.email')}>
               <input
                 name="email"
                 value={form.email}
@@ -136,7 +138,7 @@ function ProfilePage() {
                 disabled={!editing}
               />
             </Field>
-            <Field label="联系电话">
+            <Field label={t('profile.phone')}>
               <input
                 name="phone"
                 value={form.phone}
@@ -150,8 +152,8 @@ function ProfilePage() {
           <div className="section-icon">
             <Sparkles />
           </div>
-          <h3>兴趣与特长</h3>
-          <p>添加能代表你的标签，也可以详细描述经历。</p>
+          <h3>{t('profile.interests')}</h3>
+          <p>{t('profile.interestHint')}</p>
           <div className="editable-tags">
             {form.tags.map((tag) => (
               <span key={tag}>
@@ -164,7 +166,7 @@ function ProfilePage() {
                         tags: form.tags.filter((item) => item !== tag),
                       })
                     }
-                    aria-label={`删除兴趣标签 ${tag}`}
+                    aria-label={t('profile.removeTag', { tag })}
                   >
                     <X />
                   </button>
@@ -183,26 +185,26 @@ function ProfilePage() {
                     addTag();
                   }
                 }}
-                placeholder="输入兴趣标签"
+                placeholder={t('profile.tagPlaceholder')}
               />
-              <button onClick={addTag} aria-label="添加兴趣标签">
+              <button onClick={addTag} aria-label={t('profile.addTag')}>
                 <Plus />
               </button>
             </div>
           )}
-          <Field label="关于我的兴趣">
+          <Field label={t('profile.aboutInterests')}>
             <textarea
               name="interest_description"
               value={form.interest_description}
               onChange={update}
               disabled={!editing}
-              placeholder="例如：我加入校篮球队两年，擅长组织团队训练…"
+              placeholder={t('profile.interestPlaceholder')}
             />
           </Field>
         </section>
         <section className="card full">
-          <h3>个人介绍</h3>
-          <Field label="想让老师了解的其他信息">
+          <h3>{t('profile.bio')}</h3>
+          <Field label={t('profile.bioLabel')}>
             <textarea
               name="bio"
               value={form.bio}

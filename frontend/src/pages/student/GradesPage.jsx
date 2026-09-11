@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, GraduationCap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { StudentAPI } from '@/api';
 import { PageTitle, StatCard, TrendChart } from '@/components';
 
 function GradesPage() {
+  const { t } = useTranslation();
   const [grades, setGrades] = useState([]);
   useEffect(() => {
     StudentAPI.getGrades().then((data) => setGrades(data.grades));
@@ -29,53 +31,56 @@ function GradesPage() {
   return (
     <>
       <PageTitle
-        eyebrow="学习轨迹"
-        title="我的成绩变化"
-        description="关注长期趋势，比一次分数更有意义。"
+        eyebrow={t('grades.eyebrow')}
+        title={t('grades.title')}
+        description={t('grades.description')}
       />
       <div className="stat-grid student-stats">
         <StatCard
           icon={GraduationCap}
           value={average}
-          label="综合平均分"
-          note="全部已录入学期"
+          label={t('grades.overallAverage')}
+          note={t('grades.allSemesters')}
           tone="green"
         />
         <StatCard
           icon={CalendarDays}
           value={grades.length}
-          label="已记录学期"
-          note="持续积累中"
+          label={t('grades.recorded')}
+          note={t('grades.accumulating')}
           tone="orange"
         />
       </div>
       <section className="card">
         <div className="card-head">
           <div>
-            <h3>四科趋势</h3>
-            <p>语文、数学、英语、政治</p>
+            <h3>{t('grades.trend')}</h3>
+            <p>{t('grades.subjectList')}</p>
           </div>
         </div>
         <TrendChart grades={grades} />
       </section>
       <section className="card grade-table">
-        <h3>历年成绩明细</h3>
+        <h3>{t('grades.details')}</h3>
         <table>
           <thead>
             <tr>
-              <th>学年学期</th>
-              <th>语文</th>
-              <th>数学</th>
-              <th>英语</th>
-              <th>政治</th>
-              <th>平均分</th>
+              <th>{t('grades.period')}</th>
+              <th>{t('subjects.chinese')}</th>
+              <th>{t('subjects.math')}</th>
+              <th>{t('subjects.english')}</th>
+              <th>{t('subjects.politics')}</th>
+              <th>{t('subjects.average')}</th>
             </tr>
           </thead>
           <tbody>
             {grades.map((grade) => (
               <tr key={`${grade.year}-${grade.semester}`}>
                 <td>
-                  {grade.year} 年 · 第 {grade.semester} 学期
+                  {t('grades.periodValue', {
+                    year: grade.year,
+                    semester: grade.semester,
+                  })}
                 </td>
                 <td>{grade.chinese}</td>
                 <td>{grade.math}</td>
