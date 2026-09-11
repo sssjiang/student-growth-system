@@ -914,6 +914,10 @@ button {
 .profile-grid .full {
   grid-column: 1/-1;
 }
+.profile-actions {
+  display: flex;
+  gap: 10px;
+}
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -947,8 +951,11 @@ button {
   border-color: #6e947f;
   box-shadow: 0 0 0 3px #e7f0ea;
 }
-.field input:disabled {
+.field input:disabled,
+.field textarea:disabled,
+.field select:disabled {
   color: #89918c;
+  cursor: default;
 }
 .field textarea {
   min-height: 100px;
