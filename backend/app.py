@@ -26,12 +26,20 @@ from services.semantic_search import embedding_model_name, encode_interest, sear
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
+def upload_folder_path() -> Path:
+    configured = os.getenv("UPLOAD_FOLDER")
+    if not configured:
+        return BASE_DIR / "uploads"
+    path = Path(configured)
+    return path if path.is_absolute() else BASE_DIR.parent / path
+
+
 def create_app(test_config=None):
     app = Flask(__name__)
     app.config.update(
         SECRET_KEY=os.getenv("SECRET_KEY", "dev-only-change-me"),
         MAX_CONTENT_LENGTH=MAX_FILE_SIZE,
-        UPLOAD_FOLDER=os.getenv("UPLOAD_FOLDER", str(BASE_DIR / "uploads")),
+        UPLOAD_FOLDER=str(upload_folder_path()),
     )
     if test_config:
         app.config.update(test_config)
@@ -471,6 +479,8 @@ def create_app(test_config=None):
                 owner = db.execute("SELECT id FROM students WHERE user_id=?", (g.user["id"],)).fetchone()
                 if not owner or owner["id"] != row["student_id"]:
                     return error("没有访问此文件的权限", 403)
+        if not (Path(app.config["UPLOAD_FOLDER"]) / row["stored_name"]).is_file():
+            return error("文件不存在", 404)
         return send_from_directory(
             app.config["UPLOAD_FOLDER"],
             row["stored_name"],

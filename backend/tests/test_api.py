@@ -2,6 +2,8 @@ import io
 import os
 import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 
 _temp_dir = tempfile.mkdtemp(prefix="student-growth-test-")
@@ -12,7 +14,7 @@ os.environ["AI_REPORT_ENABLED"] = "false"
 os.environ["EMBEDDING_LOCAL_ONLY"] = "true"
 os.environ["HF_HUB_OFFLINE"] = "1"
 
-from app import app  # noqa: E402
+from app import app, upload_folder_path  # noqa: E402
 from seed import seed  # noqa: E402
 
 
@@ -29,6 +31,11 @@ class ApiFlowTest(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         return {"Authorization": "Bearer " + response.get_json()["token"]}
+
+    def test_relative_upload_folder_is_resolved_from_project_root(self):
+        with patch.dict(os.environ, {"UPLOAD_FOLDER": "backend/uploads"}):
+            expected = Path(__file__).resolve().parents[2] / "backend" / "uploads"
+            self.assertEqual(upload_folder_path(), expected)
 
     def test_teacher_can_search_and_generate_report(self):
         headers = self.login("teacher", "teacher123")
