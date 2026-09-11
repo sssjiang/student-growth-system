@@ -25,7 +25,7 @@ function FilePreviewModal({ credential, loadBlob, onClose }) {
     <Modal
       title={credential.title || credential.original_name}
       onClose={onClose}
-      size="lg"
+      size="preview"
     >
       <div className="preview-body">
         {!url && !error && <LoaderCircle className="spin" size={28} />}
