@@ -780,6 +780,17 @@ button {
   background: #f1d18a;
   color: #2e513f;
 }
+.student-banner-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+.student-banner-actions .primary {
+  margin-left: 0;
+}
+.report-export-content {
+  padding: 1px;
+}
 .report-layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -1438,9 +1449,12 @@ button {
     align-items: flex-start;
     flex-wrap: wrap;
   }
-  .student-banner .primary {
+  .student-banner-actions {
     margin-left: 0;
     width: 100%;
+  }
+  .student-banner-actions button {
+    flex: 1;
   }
   .insight-grid,
   .report-columns {

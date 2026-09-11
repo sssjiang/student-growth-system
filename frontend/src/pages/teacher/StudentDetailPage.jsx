@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Sparkles, Target } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Download, Sparkles, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { TeacherAPI } from '@/api';
 import { Avatar, Empty, TrendChart } from '@/components';
 import { useToast } from '@/contexts/ToastContext';
+import { exportElementToPdf } from '@/utils/exportPdf';
 
 function ReportView({ data }) {
   const { t } = useTranslation();
@@ -76,6 +77,8 @@ function StudentDetailPage() {
   const [grades, setGrades] = useState([]);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const reportRef = useRef(null);
   useEffect(() => {
     Promise.all([
       TeacherAPI.getStudents(),
@@ -102,6 +105,22 @@ function StudentDetailPage() {
       setLoading(false);
     }
   };
+  const downloadPdf = async () => {
+    setExporting(true);
+    try {
+      await exportElementToPdf(
+        reportRef.current,
+        t('detail.pdfFilename', { name: student.name }),
+        t('detail.reportTitle', { name: student.name })
+      );
+      notify(t('detail.exportSuccess'));
+    } catch (error) {
+      console.error('Could not export growth report:', error);
+      notify(t('detail.exportFailed'));
+    } finally {
+      setExporting(false);
+    }
+  };
   if (!student) return <Empty>{t('detail.loading')}</Empty>;
   return (
     <>
@@ -124,34 +143,49 @@ function StudentDetailPage() {
             {student.student_no} · {(student.tags_list || []).join(' / ')}
           </p>
         </div>
-        <button className="primary" onClick={generate} disabled={loading}>
-          <Sparkles size={17} />
-          {loading ? t('detail.analyzing') : t('detail.generate')}
-        </button>
+        <div className="student-banner-actions">
+          {report && (
+            <button
+              className="secondary"
+              onClick={downloadPdf}
+              disabled={exporting}
+            >
+              <Download size={17} />
+              {exporting ? t('detail.exportingPdf') : t('detail.downloadPdf')}
+            </button>
+          )}
+          <button className="primary" onClick={generate} disabled={loading}>
+            <Sparkles size={17} />
+            {loading ? t('detail.analyzing') : t('detail.generate')}
+          </button>
+        </div>
       </div>
-      <div className="report-layout">
-        <section className="card span-2">
-          <div className="card-head">
-            <div>
-              <h3>{t('detail.trajectory')}</h3>
-              <p>{t('detail.periods', { count: grades.length })}</p>
+      <div className="report-export-content" ref={reportRef}>
+        <div className="report-layout">
+          <section className="card span-2">
+            <div className="card-head">
+              <div>
+                <h3>{t('detail.trajectory')}</h3>
+                <p>{t('detail.periods', { count: grades.length })}</p>
+              </div>
             </div>
-          </div>
-          <TrendChart grades={grades} />
-        </section>
-        <section className="card profile-summary">
-          <h3>{t('detail.interests')}</h3>
-          <div className="large-tags">
-            {(student.tags_list || []).map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
-          <p>{student.description || student.bio || t('detail.noInterests')}</p>
-        </section>
+            <TrendChart grades={grades} />
+          </section>
+          <section className="card profile-summary">
+            <h3>{t('detail.interests')}</h3>
+            <div className="large-tags">
+              {(student.tags_list || []).map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+            <p>
+              {student.description || student.bio || t('detail.noInterests')}
+            </p>
+          </section>
+        </div>
+        {report && <ReportView data={report} />}
       </div>
-      {report ? (
-        <ReportView data={report} />
-      ) : (
+      {!report && (
         <section className="card no-report">
           <Sparkles />
           <div>

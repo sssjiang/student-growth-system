@@ -303,7 +303,12 @@
     "noInterests": "暂无兴趣描述",
     "noReport": "还没有生成成长报告",
     "noReportDesc": "系统将先计算真实成绩趋势，再用 AI 转写为清晰建议。",
-    "generateNow": "现在生成"
+    "generateNow": "现在生成",
+    "downloadPdf": "下载 PDF",
+    "exportingPdf": "正在生成 PDF…",
+    "exportSuccess": "PDF 报告已下载",
+    "exportFailed": "PDF 生成失败，请稍后重试",
+    "pdfFilename": "{{name}}成长报告"
   },
   "dashboard": {
     "greeting": "上午好，王老师",

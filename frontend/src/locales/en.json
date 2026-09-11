@@ -307,7 +307,12 @@
     "noInterests": "No interest description",
     "noReport": "No growth report yet",
     "noReportDesc": "The system calculates real grade trends before AI turns them into clear recommendations.",
-    "generateNow": "Generate now"
+    "generateNow": "Generate now",
+    "downloadPdf": "Download PDF",
+    "exportingPdf": "Creating PDF…",
+    "exportSuccess": "PDF report downloaded",
+    "exportFailed": "Could not create the PDF. Please try again.",
+    "pdfFilename": "{{name}} growth report"
   },
   "dashboard": {
     "greeting": "Good morning, Teacher Wang",

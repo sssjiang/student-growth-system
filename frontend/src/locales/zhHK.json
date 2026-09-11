@@ -303,7 +303,12 @@
     "noInterests": "暫時未有興趣描述",
     "noReport": "仲未生成成長報告",
     "noReportDesc": "系統會先計算真實成績趨勢，再用 AI 整理成清晰建議。",
-    "generateNow": "立即生成"
+    "generateNow": "立即生成",
+    "downloadPdf": "下載 PDF",
+    "exportingPdf": "生成 PDF 緊…",
+    "exportSuccess": "PDF 報告已下載",
+    "exportFailed": "PDF 生成失敗，請稍後再試",
+    "pdfFilename": "{{name}}成長報告"
   },
   "dashboard": {
     "greeting": "早晨，王老師",
