@@ -51,7 +51,15 @@
     "fileMissing": "文件不存在",
     "fileForbidden": "没有访问此文件的权限",
     "fileTooLarge": "文件不能超过 10MB",
-    "aiReviewFailed": "AI 辅助评审失败，请稍后重试"
+    "aiReviewFailed": "AI 辅助评审失败，请稍后重试",
+    "selectKnowledgeFile": "请选择教材文件",
+    "knowledgeTitleRequired": "请填写教材名称",
+    "invalidSubject": "请选择正确的学科",
+    "knowledgeMissing": "教材不存在",
+    "conversationMissing": "辅导会话不存在",
+    "conversationSubjectLocked": "同一个会话中不能修改学科",
+    "questionRequired": "请填写你的问题",
+    "knowledgeFileType": "教材仅支持 PDF、DOCX、图片和 TXT 文件"
   },
   "brand": { "mark": "知", "name": "知行", "subtitle": "学生成长中心" },
   "nav": {
@@ -66,9 +74,11 @@
     "students": "学生档案",
     "credentialReview": "凭证审核",
     "gradeManagement": "成绩管理",
+    "knowledgeBase": "教材知识库",
     "myProfile": "我的档案",
     "myGrades": "我的成绩",
     "materials": "成长材料",
+    "aiTutor": "AI 学科辅导",
     "settings": "系统设置",
     "signOut": "退出登录",
     "openMenu": "打开菜单",
@@ -296,6 +306,79 @@
       "local-rules": "本地规则",
       "local-fallback": "模型失败，本地规则降级",
       "local-extraction": "本地文件提取"
+    }
+  },
+  "knowledge": {
+    "eyebrow": "教学知识库",
+    "title": "管理可信的教材资料",
+    "description": "上传教师认可的教材，让学科辅导回答有明确依据。",
+    "addTitle": "添加教材",
+    "addHint": "文件上传后由后台任务自动解析并建立索引。",
+    "name": "教材名称",
+    "namePlaceholder": "例如：高一数学必修一·函数",
+    "subject": "学科",
+    "grade": "适用年级",
+    "gradePlaceholder": "选填，例如：高一",
+    "source": "资料来源",
+    "sourcePlaceholder": "选填，例如：人教版必修一第三章",
+    "chooseFile": "选择教材文件",
+    "fileHint": "支持 PDF、Word、TXT 或图片，最大 10MB",
+    "upload": "上传并建立索引",
+    "uploading": "正在上传…",
+    "uploaded": "教材已上传并进入索引队列",
+    "deleted": "教材已删除",
+    "deleteTitle": "删除教材",
+    "deleteConfirm": "删除“{{title}}”及其全部索引内容？",
+    "reindex": "重新建立索引",
+    "reindexQueued": "索引任务已提交",
+    "library": "已上传教材",
+    "count": "共 {{count}} 份教材",
+    "empty": "还没有教材，请上传经过确认的教材或讲义。",
+    "allGrades": "全部年级",
+    "chunks": "{{count}} 个可检索知识片段",
+    "processingHint": "正在等待后台索引",
+    "status": {
+      "pending": "等待索引",
+      "processing": "正在索引",
+      "ready": "可以使用",
+      "failed": "处理失败"
+    }
+  },
+  "tutor": {
+    "eyebrow": "个性化学习支持",
+    "title": "AI 学科辅导",
+    "description": "围绕教材提问、分析错题，并通过分步提示理解知识。",
+    "newChat": "新建对话",
+    "history": "最近对话",
+    "noHistory": "你的辅导对话会显示在这里。",
+    "assistant": "知行学习助手",
+    "grounded": "回答基于教师上传的教材",
+    "welcomeTitle": "今天想学习什么{{subject}}内容？",
+    "welcomeDescription": "说出不理解的地方，也可以贴出你的解题过程，我会一步一步提示。",
+    "placeholder": "输入你的{{subject}}问题…",
+    "references": "教材依据",
+    "disclaimer": "AI 回答可能存在错误，重要结论请结合教材并向老师确认。",
+    "samples": {
+      "chinese": {
+        "concept": "阅读理解中怎样概括文章中心思想？",
+        "mistake": "为什么我的作文总是中心不突出？",
+        "practice": "给我一道阅读理解练习题。"
+      },
+      "math": {
+        "concept": "用例子解释一下函数单调性。",
+        "mistake": "帮我找出这道方程解题步骤里的错误。",
+        "practice": "给我一道练习题，先不要直接告诉我答案。"
+      },
+      "english": {
+        "concept": "现在完成时和一般过去时有什么区别？",
+        "mistake": "帮我分析这个句子的语法错误。",
+        "practice": "给我一个简短的词汇练习。"
+      },
+      "politics": {
+        "concept": "材料分析题应该怎样组织答案？",
+        "mistake": "为什么我的答案总是缺少得分点？",
+        "practice": "给我一道简短的材料分析练习。"
+      }
     }
   },
   "gradeImport": {

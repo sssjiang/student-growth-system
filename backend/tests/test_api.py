@@ -60,6 +60,62 @@ class ApiFlowTest(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_teacher_manages_knowledge_and_student_uses_tutor(self):
+        teacher_headers = self.login("teacher", "teacher123")
+        with patch("app.enqueue_knowledge_index", return_value="knowledge-job") as enqueue:
+            uploaded = self.client.post(
+                "/api/teacher/knowledge",
+                data={
+                    "title": "函数基础",
+                    "subject": "math",
+                    "grade_level": "高二",
+                    "source": "校本教材第一章",
+                    "file": (io.BytesIO("函数单调性是函数的重要性质。".encode()), "math.txt"),
+                },
+                headers=teacher_headers,
+                content_type="multipart/form-data",
+            )
+        self.assertEqual(uploaded.status_code, 201)
+        document = uploaded.get_json()["document"]
+        enqueue.assert_called_once_with(document["id"])
+
+        listed = self.client.get("/api/teacher/knowledge", headers=teacher_headers)
+        self.assertEqual(listed.status_code, 200)
+        self.assertTrue(any(item["id"] == document["id"] for item in listed.get_json()["documents"]))
+
+        student_headers = self.login("student1", "student123")
+        chunks = [
+            {
+                "document_id": document["id"],
+                "title": document["title"],
+                "source": document["source"],
+                "heading": "函数单调性",
+                "content": "函数在区间上递增或递减。",
+            }
+        ]
+        with patch("app.retrieve_chunks", return_value=chunks), patch(
+            "app.generate_tutor_reply",
+            return_value=("先观察自变量和函数值的变化。[1]", [{"index": 1, "title": "函数基础"}], "test-rag"),
+        ):
+            chat = self.client.post(
+                "/api/student/tutor/chat",
+                json={"subject": "math", "message": "什么是函数单调性？"},
+                headers=student_headers,
+            )
+        self.assertEqual(chat.status_code, 200)
+        conversation_id = chat.get_json()["conversation_id"]
+        history = self.client.get(
+            f"/api/student/tutor/conversations/{conversation_id}",
+            headers=student_headers,
+        )
+        self.assertEqual(history.status_code, 200)
+        self.assertEqual(len(history.get_json()["messages"]), 2)
+
+        deleted = self.client.delete(
+            f"/api/teacher/knowledge/{document['id']}", headers=teacher_headers
+        )
+        self.assertEqual(deleted.status_code, 200)
+
     def test_credential_upload_review_undo_resubmit_and_delete(self):
         student_headers = self.login("student1", "student123")
         with patch("app.enqueue_credential_analysis", return_value="upload-job") as enqueue:

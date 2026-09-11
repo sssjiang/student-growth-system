@@ -104,7 +104,69 @@ CREATE TABLE IF NOT EXISTS credential_ai_reviews (
   FOREIGN KEY(file_id) REFERENCES student_files(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS knowledge_documents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  subject TEXT NOT NULL CHECK(subject IN ('chinese', 'math', 'english', 'politics')),
+  grade_level TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT '',
+  original_name TEXT NOT NULL,
+  stored_name TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT '',
+  size INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK(status IN ('pending', 'processing', 'ready', 'failed')),
+  job_id TEXT NOT NULL DEFAULT '',
+  chunk_count INTEGER NOT NULL DEFAULT 0,
+  error_message TEXT NOT NULL DEFAULT '',
+  uploaded_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS knowledge_chunks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  document_id INTEGER NOT NULL,
+  position INTEGER NOT NULL,
+  heading TEXT NOT NULL DEFAULT '',
+  content TEXT NOT NULL,
+  embedding TEXT,
+  embedding_model TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(document_id, position),
+  FOREIGN KEY(document_id) REFERENCES knowledge_documents(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tutor_conversations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL,
+  subject TEXT NOT NULL CHECK(subject IN ('chinese', 'math', 'english', 'politics')),
+  title TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tutor_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id INTEGER NOT NULL,
+  role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  citations TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(conversation_id) REFERENCES tutor_conversations(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_grades_student_year ON grades(student_id, year, semester);
 CREATE INDEX IF NOT EXISTS idx_students_class ON students(grade, class_name);
 CREATE INDEX IF NOT EXISTS idx_credential_ai_reviews_status
   ON credential_ai_reviews(analysis_status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_knowledge_documents_filter
+  ON knowledge_documents(subject, grade_level, status);
+CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_document
+  ON knowledge_chunks(document_id, position);
+CREATE INDEX IF NOT EXISTS idx_tutor_conversations_student
+  ON tutor_conversations(student_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tutor_messages_conversation
+  ON tutor_messages(conversation_id, id);

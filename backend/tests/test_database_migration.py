@@ -45,6 +45,17 @@ class DatabaseMigrationTest(unittest.TestCase):
                     ai_review_columns
                 )
             )
+            with patch.dict(os.environ, {"DATABASE_PATH": str(path)}):
+                with get_db() as db:
+                    tables = {
+                        row["name"]
+                        for row in db.execute(
+                            "SELECT name FROM sqlite_master WHERE type='table'"
+                        )
+                    }
+            self.assertTrue(
+                {"knowledge_documents", "knowledge_chunks", "tutor_conversations", "tutor_messages"}.issubset(tables)
+            )
 
     def test_existing_interests_table_receives_embedding_metadata(self):
         with tempfile.TemporaryDirectory(prefix="student-growth-migration-") as directory:

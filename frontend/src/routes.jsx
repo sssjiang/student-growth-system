@@ -5,12 +5,13 @@ import LoginPage from '@/pages/LoginPage';
 import {
   CredentialReviewPage,
   GradeImportPage,
+  KnowledgeBasePage,
   SmartSearchPage,
   StudentDetailPage,
   StudentDirectoryPage,
   TeacherDashboard,
 } from '@/pages/teacher';
-import { FilesPage, GradesPage, ProfilePage } from '@/pages/student';
+import { FilesPage, GradesPage, ProfilePage, TutorPage } from '@/pages/student';
 
 const routes = [
   { path: '/sign-in', element: <LoginPage /> },
@@ -31,6 +32,7 @@ const routes = [
       { path: 'students/:studentId', element: <StudentDetailPage /> },
       { path: 'credentials', element: <CredentialReviewPage /> },
       { path: 'grades/import', element: <GradeImportPage /> },
+      { path: 'knowledge', element: <KnowledgeBasePage /> },
     ],
   },
   {
@@ -47,6 +49,7 @@ const routes = [
       { path: 'profile', element: <ProfilePage /> },
       { path: 'grades', element: <GradesPage /> },
       { path: 'files', element: <FilesPage /> },
+      { path: 'tutor', element: <TutorPage /> },
     ],
   },
   { path: '/', element: <Navigate to="/sign-in" replace /> },

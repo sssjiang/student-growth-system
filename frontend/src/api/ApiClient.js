@@ -29,6 +29,14 @@ const ERROR_KEYS = {
   没有访问此文件的权限: 'fileForbidden',
   '文件不能超过 10MB': 'fileTooLarge',
   'AI 辅助评审失败，请稍后重试': 'aiReviewFailed',
+  请选择教材文件: 'selectKnowledgeFile',
+  请填写教材名称: 'knowledgeTitleRequired',
+  请选择正确的学科: 'invalidSubject',
+  教材不存在: 'knowledgeMissing',
+  辅导会话不存在: 'conversationMissing',
+  会话学科不能修改: 'conversationSubjectLocked',
+  请填写你的问题: 'questionRequired',
+  '教材仅支持 PDF、DOCX、图片和 TXT 文件': 'knowledgeFileType',
 };
 
 class ApiClient {

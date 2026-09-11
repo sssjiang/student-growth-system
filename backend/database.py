@@ -89,6 +89,11 @@ def init_db() -> None:
                WHERE job_id='' AND analysis_status IN ('pending','processing')"""
         )
         db.execute(
+            """UPDATE knowledge_documents SET status='failed',
+               error_message='not-queued',updated_at=CURRENT_TIMESTAMP
+               WHERE job_id='' AND status IN ('pending','processing')"""
+        )
+        db.execute(
             "CREATE INDEX IF NOT EXISTS idx_student_files_status "
             "ON student_files(status, uploaded_at)"
         )

@@ -6,7 +6,8 @@ from celery.signals import worker_process_init
 
 from celery_app import celery_app
 from database import get_db, init_db
-from services.credential_analysis import analyze_credential
+from services.credential_analysis import analyze_credential, extract_document
+from services.knowledge_base import create_chunk_records
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -97,4 +98,60 @@ def analyze_credential_task(self, file_id, revision, job_id):
         if self.request.retries < self.max_retries:
             raise self.retry(exc=exc, countdown=30 * (self.request.retries + 1))
         _mark_failed(file_id, revision, job_id, type(exc).__name__)
+        raise
+
+
+@celery_app.task(bind=True, max_retries=2, name="knowledge.index")
+def index_knowledge_document_task(self, document_id, job_id):
+    with get_db() as db:
+        document = db.execute(
+            "SELECT * FROM knowledge_documents WHERE id=? AND job_id=?",
+            (document_id, job_id),
+        ).fetchone()
+        if not document:
+            return {"status": "stale"}
+        db.execute(
+            """UPDATE knowledge_documents SET status='processing',
+               error_message='',updated_at=CURRENT_TIMESTAMP
+               WHERE id=? AND job_id=?""",
+            (document_id, job_id),
+        )
+
+    try:
+        text, method, _ = extract_document(
+            _upload_path(document["stored_name"]), document["mime_type"]
+        )
+        records = create_chunk_records(text)
+        if not records:
+            raise ValueError(f"no-readable-content:{method}")
+        with get_db() as db:
+            current = db.execute(
+                "SELECT 1 FROM knowledge_documents WHERE id=? AND job_id=?",
+                (document_id, job_id),
+            ).fetchone()
+            if not current:
+                return {"status": "stale"}
+            db.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (document_id,))
+            db.executemany(
+                """INSERT INTO knowledge_chunks(
+                   document_id,position,heading,content,embedding,embedding_model
+                   ) VALUES(?,?,?,?,?,?)""",
+                [(document_id, *record) for record in records],
+            )
+            db.execute(
+                """UPDATE knowledge_documents SET status='ready',chunk_count=?,
+                   error_message='',updated_at=CURRENT_TIMESTAMP
+                   WHERE id=? AND job_id=?""",
+                (len(records), document_id, job_id),
+            )
+        return {"status": "ready", "chunks": len(records)}
+    except Exception as exc:
+        if self.request.retries < self.max_retries:
+            raise self.retry(exc=exc, countdown=30 * (self.request.retries + 1))
+        with get_db() as db:
+            db.execute(
+                """UPDATE knowledge_documents SET status='failed',error_message=?,
+                   updated_at=CURRENT_TIMESTAMP WHERE id=? AND job_id=?""",
+                (type(exc).__name__, document_id, job_id),
+            )
         raise

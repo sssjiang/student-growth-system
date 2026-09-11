@@ -51,7 +51,15 @@
     "fileMissing": "File not found",
     "fileForbidden": "You do not have access to this file",
     "fileTooLarge": "Files cannot exceed 10 MB",
-    "aiReviewFailed": "AI-assisted review failed. Please try again."
+    "aiReviewFailed": "AI-assisted review failed. Please try again.",
+    "selectKnowledgeFile": "Select a learning material file",
+    "knowledgeTitleRequired": "Enter a material title",
+    "invalidSubject": "Select a valid subject",
+    "knowledgeMissing": "Learning material not found",
+    "conversationMissing": "Tutoring conversation not found",
+    "conversationSubjectLocked": "The subject cannot be changed within a conversation",
+    "questionRequired": "Enter your question",
+    "knowledgeFileType": "Materials must be PDF, DOCX, TXT, or an image"
   },
   "brand": {
     "mark": "知",
@@ -70,9 +78,11 @@
     "students": "Student profiles",
     "credentialReview": "Credential review",
     "gradeManagement": "Grade management",
+    "knowledgeBase": "Teaching library",
     "myProfile": "My profile",
     "myGrades": "My grades",
     "materials": "Achievements",
+    "aiTutor": "AI tutor",
     "settings": "Settings",
     "signOut": "Sign out",
     "openMenu": "Open menu",
@@ -300,6 +310,79 @@
       "local-rules": "Local rules",
       "local-fallback": "Model failed; local fallback",
       "local-extraction": "Local file extraction"
+    }
+  },
+  "knowledge": {
+    "eyebrow": "Teaching knowledge base",
+    "title": "Manage trusted learning materials",
+    "description": "Upload approved materials for grounded, subject-specific tutoring answers.",
+    "addTitle": "Add learning material",
+    "addHint": "The file will be parsed and indexed by a background worker.",
+    "name": "Material title",
+    "namePlaceholder": "e.g. Grade 10 Mathematics · Functions",
+    "subject": "Subject",
+    "grade": "Grade level",
+    "gradePlaceholder": "Optional, e.g. Grade 10",
+    "source": "Source",
+    "sourcePlaceholder": "Optional, e.g. textbook and chapter",
+    "chooseFile": "Choose a material file",
+    "fileHint": "PDF, Word, TXT or image · up to 10 MB",
+    "upload": "Upload and index",
+    "uploading": "Uploading…",
+    "uploaded": "Material uploaded and queued for indexing",
+    "deleted": "Material deleted",
+    "deleteTitle": "Delete learning material",
+    "deleteConfirm": "Delete “{{title}}” and all of its indexed content?",
+    "reindex": "Index again",
+    "reindexQueued": "Indexing task queued",
+    "library": "Indexed materials",
+    "count": "{{count}} materials",
+    "empty": "No materials yet. Upload an approved textbook or lesson document.",
+    "allGrades": "All grades",
+    "chunks": "{{count}} searchable sections",
+    "processingHint": "Waiting for the background indexer",
+    "status": {
+      "pending": "Queued",
+      "processing": "Indexing",
+      "ready": "Ready",
+      "failed": "Failed"
+    }
+  },
+  "tutor": {
+    "eyebrow": "Personal learning support",
+    "title": "AI subject tutor",
+    "description": "Ask questions, work through mistakes, and learn from teacher-approved materials.",
+    "newChat": "New conversation",
+    "history": "Recent conversations",
+    "noHistory": "Your conversations will appear here.",
+    "assistant": "Zhixing learning assistant",
+    "grounded": "Answers grounded in the teaching library",
+    "welcomeTitle": "What would you like to learn in {{subject}}?",
+    "welcomeDescription": "Describe what you do not understand or paste your attempt. I will guide you step by step.",
+    "placeholder": "Ask a {{subject}} question…",
+    "references": "Learning material references",
+    "disclaimer": "AI responses may contain errors. Verify important conclusions with your teacher and textbook.",
+    "samples": {
+      "chinese": {
+        "concept": "How can I identify the central idea of a passage?",
+        "mistake": "Why does my essay feel unfocused?",
+        "practice": "Give me a reading comprehension practice question."
+      },
+      "math": {
+        "concept": "Explain function monotonicity with an example.",
+        "mistake": "Help me find the mistake in my equation-solving steps.",
+        "practice": "Give me a practice problem without revealing the answer first."
+      },
+      "english": {
+        "concept": "What is the difference between the present perfect and past tense?",
+        "mistake": "Help me analyze the grammar in this sentence.",
+        "practice": "Give me a short vocabulary exercise."
+      },
+      "politics": {
+        "concept": "How should I analyze a material-based question?",
+        "mistake": "Why is my answer missing key scoring points?",
+        "practice": "Give me a short material analysis exercise."
+      }
     }
   },
   "gradeImport": {

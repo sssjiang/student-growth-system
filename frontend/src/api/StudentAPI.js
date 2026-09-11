@@ -28,6 +28,18 @@ class StudentAPI {
     Object.entries(metadata).forEach(([key, value]) => form.append(key, value));
     return api.post(`/student/files/${fileId}/resubmit`, form);
   };
+
+  getTutorConversations = () => api.get('/student/tutor/conversations');
+
+  getTutorConversation = (conversationId) =>
+    api.get(`/student/tutor/conversations/${conversationId}`);
+
+  sendTutorMessage = (subject, message, conversationId) =>
+    api.post('/student/tutor/chat', {
+      subject,
+      message,
+      conversation_id: conversationId || null,
+    });
 }
 
 export default new StudentAPI();

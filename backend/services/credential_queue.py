@@ -37,3 +37,33 @@ def enqueue_credential_analysis(file_id, revision):
             )
         return None
     return job_id
+
+
+def enqueue_knowledge_index(document_id):
+    job_id = uuid.uuid4().hex
+    with get_db() as db:
+        updated = db.execute(
+            """UPDATE knowledge_documents SET job_id=?,status='pending',chunk_count=0,
+               error_message='',updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+            (job_id, document_id),
+        ).rowcount
+    if not updated:
+        return None
+    try:
+        from tasks import index_knowledge_document_task
+
+        index_knowledge_document_task.apply_async(
+            args=(document_id, job_id),
+            task_id=job_id,
+            queue="knowledge-indexing",
+        )
+    except Exception:
+        with get_db() as db:
+            db.execute(
+                """UPDATE knowledge_documents SET status='failed',
+                   error_message='queue-unavailable',updated_at=CURRENT_TIMESTAMP
+                   WHERE id=? AND job_id=?""",
+                (document_id, job_id),
+            )
+        return None
+    return job_id

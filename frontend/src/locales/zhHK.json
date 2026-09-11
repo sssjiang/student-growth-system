@@ -51,7 +51,15 @@
     "fileMissing": "搵唔到檔案",
     "fileForbidden": "你冇權限存取呢個檔案",
     "fileTooLarge": "檔案唔可以超過 10MB",
-    "aiReviewFailed": "AI 輔助評審失敗，請稍後再試"
+    "aiReviewFailed": "AI 輔助評審失敗，請稍後再試",
+    "selectKnowledgeFile": "請選擇教材檔案",
+    "knowledgeTitleRequired": "請填寫教材名稱",
+    "invalidSubject": "請選擇正確嘅學科",
+    "knowledgeMissing": "搵唔到教材",
+    "conversationMissing": "搵唔到輔導對話",
+    "conversationSubjectLocked": "同一個對話入面唔可以更改學科",
+    "questionRequired": "請填寫你嘅問題",
+    "knowledgeFileType": "教材只支援 PDF、DOCX、圖片同 TXT 檔案"
   },
   "brand": { "mark": "知", "name": "知行", "subtitle": "學生成長中心" },
   "nav": {
@@ -66,9 +74,11 @@
     "students": "學生檔案",
     "credentialReview": "憑證審核",
     "gradeManagement": "成績管理",
+    "knowledgeBase": "教材知識庫",
     "myProfile": "我的檔案",
     "myGrades": "我的成績",
     "materials": "成長材料",
+    "aiTutor": "AI 學科輔導",
     "settings": "系統設定",
     "signOut": "登出",
     "openMenu": "打開選單",
@@ -296,6 +306,79 @@
       "local-rules": "本地規則",
       "local-fallback": "模型失敗，改用本地規則",
       "local-extraction": "本地檔案提取"
+    }
+  },
+  "knowledge": {
+    "eyebrow": "教學知識庫",
+    "title": "管理可信嘅教材資料",
+    "description": "上載老師認可嘅教材，令學科輔導回答有清楚依據。",
+    "addTitle": "加入教材",
+    "addHint": "檔案上載後會由後台工作自動解析同建立索引。",
+    "name": "教材名稱",
+    "namePlaceholder": "例如：高中數學·函數",
+    "subject": "學科",
+    "grade": "適用年級",
+    "gradePlaceholder": "選填，例如：高一",
+    "source": "資料來源",
+    "sourcePlaceholder": "選填，例如：必修一第三章",
+    "chooseFile": "選擇教材檔案",
+    "fileHint": "支援 PDF、Word、TXT 或圖片，最大 10MB",
+    "upload": "上載並建立索引",
+    "uploading": "上載緊…",
+    "uploaded": "教材已上載並加入索引佇列",
+    "deleted": "教材已刪除",
+    "deleteTitle": "刪除教材",
+    "deleteConfirm": "刪除「{{title}}」同佢嘅全部索引內容？",
+    "reindex": "重新建立索引",
+    "reindexQueued": "索引工作已提交",
+    "library": "已上載教材",
+    "count": "共 {{count}} 份教材",
+    "empty": "仲未有教材，請上載經過確認嘅教材或講義。",
+    "allGrades": "全部年級",
+    "chunks": "{{count}} 個可檢索知識片段",
+    "processingHint": "等候後台建立索引",
+    "status": {
+      "pending": "等候索引",
+      "processing": "建立索引緊",
+      "ready": "可以使用",
+      "failed": "處理失敗"
+    }
+  },
+  "tutor": {
+    "eyebrow": "個人化學習支援",
+    "title": "AI 學科輔導",
+    "description": "圍繞教材提問、分析錯題，再用逐步提示理解知識。",
+    "newChat": "新增對話",
+    "history": "最近對話",
+    "noHistory": "你嘅輔導對話會顯示喺呢度。",
+    "assistant": "知行學習助手",
+    "grounded": "回答以老師上載嘅教材為依據",
+    "welcomeTitle": "今日想學咩{{subject}}內容？",
+    "welcomeDescription": "講低唔明嘅地方，亦可以貼出解題過程，我會一步一步提示。",
+    "placeholder": "輸入你嘅{{subject}}問題…",
+    "references": "教材依據",
+    "disclaimer": "AI 回答可能有錯，重要結論請對照教材並向老師確認。",
+    "samples": {
+      "chinese": {
+        "concept": "閱讀理解入面點樣概括文章中心思想？",
+        "mistake": "點解我篇作文個中心成日唔突出？",
+        "practice": "畀我一道閱讀理解練習題。"
+      },
+      "math": {
+        "concept": "用例子解釋一下函數單調性。",
+        "mistake": "幫我搵出呢道方程解題步驟入面嘅錯誤。",
+        "practice": "畀我一道練習題，暫時唔好直接話我知答案。"
+      },
+      "english": {
+        "concept": "現在完成時同一般過去時有咩分別？",
+        "mistake": "幫我分析呢個句子嘅文法錯誤。",
+        "practice": "畀我一個簡短嘅詞彙練習。"
+      },
+      "politics": {
+        "concept": "材料分析題應該點樣組織答案？",
+        "mistake": "點解我嘅答案成日欠缺得分點？",
+        "practice": "畀我一道簡短嘅材料分析練習。"
+      }
     }
   },
   "gradeImport": {

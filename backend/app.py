@@ -20,8 +20,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from database import get_db, init_db
 from services.grade_report import generate_report
 from services.file_storage import InvalidFileError, LocalFileStorage
-from services.credential_queue import enqueue_credential_analysis
+from services.credential_queue import (
+    enqueue_credential_analysis,
+    enqueue_knowledge_index,
+)
+from services.knowledge_base import SUBJECTS, retrieve_chunks
 from services.semantic_search import embedding_model_name, encode_interest, search_students
+from services.tutor import generate_tutor_reply
 
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -498,6 +503,231 @@ def create_app(test_config=None):
             return error("请上传 UTF-8 编码的 CSV 文件")
         return jsonify({"message": f"成功导入 {imported} 条成绩", "imported": imported, "skipped_rows": skipped})
 
+    @app.route("/api/teacher/knowledge", methods=["GET", "POST"])
+    @token_required("teacher")
+    def teacher_knowledge():
+        if request.method == "GET":
+            with get_db() as db:
+                documents = knowledge_document_rows(db)
+            return jsonify({"documents": documents})
+
+        uploaded = request.files.get("file")
+        title = str(request.form.get("title", "")).strip()[:120]
+        subject = str(request.form.get("subject", "")).strip()
+        grade_level = str(request.form.get("grade_level", "")).strip()[:40]
+        source = str(request.form.get("source", "")).strip()[:160]
+        if not uploaded or not uploaded.filename:
+            return error("请选择教材文件")
+        if not title:
+            return error("请填写教材名称")
+        if subject not in SUBJECTS:
+            return error("请选择正确的学科")
+        if Path(uploaded.filename).suffix.lower() not in {
+            ".pdf",
+            ".docx",
+            ".txt",
+            ".png",
+            ".jpg",
+            ".jpeg",
+        }:
+            return error("教材仅支持 PDF、DOCX、图片和 TXT 文件")
+        try:
+            saved = storage.save(uploaded)
+        except InvalidFileError as exc:
+            return error(str(exc))
+        try:
+            with get_db() as db:
+                cursor = db.execute(
+                    """INSERT INTO knowledge_documents(
+                       title,subject,grade_level,source,original_name,stored_name,
+                       mime_type,size,uploaded_by
+                       ) VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (
+                        title,
+                        subject,
+                        grade_level,
+                        source,
+                        saved["original_name"],
+                        saved["stored_name"],
+                        saved["mime_type"],
+                        saved["size"],
+                        g.user["id"],
+                    ),
+                )
+                document_id = cursor.lastrowid
+        except Exception:
+            storage.delete(saved["stored_name"])
+            raise
+        enqueue_knowledge_index(document_id)
+        with get_db() as db:
+            document = knowledge_document_rows(db, "WHERE kd.id=?", (document_id,))[0]
+        return jsonify({"document": document}), 201
+
+    @app.delete("/api/teacher/knowledge/<int:document_id>")
+    @token_required("teacher")
+    def delete_knowledge_document(document_id):
+        with get_db() as db:
+            document = db.execute(
+                "SELECT stored_name FROM knowledge_documents WHERE id=?", (document_id,)
+            ).fetchone()
+            if not document:
+                return error("教材不存在", 404)
+            db.execute("DELETE FROM knowledge_documents WHERE id=?", (document_id,))
+        storage.delete(document["stored_name"])
+        return jsonify({"message": "教材已删除"})
+
+    @app.post("/api/teacher/knowledge/<int:document_id>/reindex")
+    @token_required("teacher")
+    def reindex_knowledge_document(document_id):
+        with get_db() as db:
+            if not db.execute(
+                "SELECT 1 FROM knowledge_documents WHERE id=?", (document_id,)
+            ).fetchone():
+                return error("教材不存在", 404)
+        enqueue_knowledge_index(document_id)
+        with get_db() as db:
+            document = knowledge_document_rows(db, "WHERE kd.id=?", (document_id,))[0]
+        return jsonify({"document": document}), 202
+
+    @app.get("/api/teacher/knowledge/<int:document_id>/file")
+    @token_required("teacher")
+    def preview_knowledge_document(document_id):
+        with get_db() as db:
+            document = db.execute(
+                "SELECT * FROM knowledge_documents WHERE id=?", (document_id,)
+            ).fetchone()
+        if not document:
+            return error("教材不存在", 404)
+        return send_from_directory(
+            app.config["UPLOAD_FOLDER"],
+            document["stored_name"],
+            download_name=document["original_name"],
+            mimetype=document["mime_type"],
+            as_attachment=request.args.get("preview") != "1",
+        )
+
+    @app.get("/api/student/tutor/conversations")
+    @token_required("student")
+    def tutor_conversations():
+        with get_db() as db:
+            student = db.execute(
+                "SELECT id FROM students WHERE user_id=?", (g.user["id"],)
+            ).fetchone()
+            rows = list(
+                db.execute(
+                    """SELECT tc.*,
+                   (SELECT content FROM tutor_messages tm WHERE tm.conversation_id=tc.id
+                    ORDER BY tm.id DESC LIMIT 1) last_message
+                   FROM tutor_conversations tc WHERE tc.student_id=?
+                   ORDER BY tc.updated_at DESC,tc.id DESC LIMIT 30""",
+                    (student["id"],),
+                )
+            )
+        return jsonify({"conversations": [dict(row) for row in rows]})
+
+    @app.get("/api/student/tutor/conversations/<int:conversation_id>")
+    @token_required("student")
+    def tutor_conversation(conversation_id):
+        with get_db() as db:
+            conversation = db.execute(
+                """SELECT tc.* FROM tutor_conversations tc JOIN students s
+                   ON s.id=tc.student_id WHERE tc.id=? AND s.user_id=?""",
+                (conversation_id, g.user["id"]),
+            ).fetchone()
+            if not conversation:
+                return error("辅导会话不存在", 404)
+            messages = [
+                tutor_message_dict(row)
+                for row in db.execute(
+                    "SELECT * FROM tutor_messages WHERE conversation_id=? ORDER BY id",
+                    (conversation_id,),
+                )
+            ]
+        return jsonify({"conversation": dict(conversation), "messages": messages})
+
+    @app.post("/api/student/tutor/chat")
+    @token_required("student")
+    def tutor_chat():
+        data = request.get_json(silent=True) or {}
+        question = str(data.get("message", "")).strip()[:2000]
+        subject = str(data.get("subject", "")).strip()
+        conversation_id = data.get("conversation_id")
+        if len(question) < 2:
+            return error("请填写你的问题")
+        if subject not in SUBJECTS:
+            return error("请选择正确的学科")
+        with get_db() as db:
+            student = db.execute(
+                "SELECT * FROM students WHERE user_id=?", (g.user["id"],)
+            ).fetchone()
+            if conversation_id:
+                conversation = db.execute(
+                    """SELECT * FROM tutor_conversations
+                       WHERE id=? AND student_id=?""",
+                    (conversation_id, student["id"]),
+                ).fetchone()
+                if not conversation:
+                    return error("辅导会话不存在", 404)
+                if conversation["subject"] != subject:
+                    return error("会话学科不能修改")
+            else:
+                cursor = db.execute(
+                    """INSERT INTO tutor_conversations(student_id,subject,title)
+                       VALUES(?,?,?)""",
+                    (student["id"], subject, question[:40]),
+                )
+                conversation_id = cursor.lastrowid
+            history = [
+                dict(row)
+                for row in db.execute(
+                    """SELECT role,content FROM tutor_messages
+                       WHERE conversation_id=? ORDER BY id DESC LIMIT 6""",
+                    (conversation_id,),
+                )
+            ][::-1]
+            candidates = list(
+                db.execute(
+                    """SELECT kc.*,kd.title,kd.source,kd.subject,kd.grade_level
+                       FROM knowledge_chunks kc JOIN knowledge_documents kd
+                       ON kd.id=kc.document_id WHERE kd.status='ready' AND kd.subject=?
+                       AND (kd.grade_level='' OR kd.grade_level=?) LIMIT 1000""",
+                    (subject, student["grade"]),
+                )
+            )
+            grades = grade_rows(db, student["id"])
+
+        chunks = retrieve_chunks(question, candidates)
+        answer, citations, generated_by = generate_tutor_reply(
+            dict(student), subject, question, chunks, history, grades
+        )
+        with get_db() as db:
+            db.execute(
+                "INSERT INTO tutor_messages(conversation_id,role,content) VALUES(?,'user',?)",
+                (conversation_id, question),
+            )
+            message = db.execute(
+                """INSERT INTO tutor_messages(conversation_id,role,content,citations)
+                   VALUES(?,'assistant',?,?)""",
+                (conversation_id, answer, json.dumps(citations, ensure_ascii=False)),
+            )
+            db.execute(
+                """UPDATE tutor_conversations SET updated_at=CURRENT_TIMESTAMP
+                   WHERE id=?""",
+                (conversation_id,),
+            )
+        return jsonify(
+            {
+                "conversation_id": conversation_id,
+                "message": {
+                    "id": message.lastrowid,
+                    "role": "assistant",
+                    "content": answer,
+                    "citations": citations,
+                    "generated_by": generated_by,
+                },
+            }
+        )
+
     @app.post("/api/teacher/students/<int:student_id>/report")
     @token_required("teacher")
     def create_report(student_id):
@@ -597,6 +827,26 @@ def credential_analysis_dict(row):
     result["comparisons"] = json.loads(result.get("comparisons") or "[]")
     result.pop("extracted_text", None)
     result.pop("job_id", None)
+    return result
+
+
+def knowledge_document_rows(db, where="", params=()):
+    return [
+        dict(row)
+        for row in db.execute(
+            f"""SELECT kd.id,kd.title,kd.subject,kd.grade_level,kd.source,
+                       kd.original_name,kd.mime_type,kd.size,kd.status,kd.chunk_count,
+                       kd.error_message,kd.created_at,kd.updated_at,u.display_name uploader_name
+                FROM knowledge_documents kd LEFT JOIN users u ON u.id=kd.uploaded_by
+                {where} ORDER BY kd.updated_at DESC,kd.id DESC""",
+            params,
+        )
+    ]
+
+
+def tutor_message_dict(row):
+    result = dict(row)
+    result["citations"] = json.loads(result.get("citations") or "[]")
     return result
 
 

@@ -3,11 +3,13 @@ import {
   BadgeCheck,
   ClipboardList,
   FileText,
+  LibraryBig,
   LayoutDashboard,
   LogOut,
   Menu,
   Search,
   Settings,
+  Sparkles,
   UserRound,
   UsersRound,
   X,
@@ -37,11 +39,17 @@ const NAV_ITEMS = {
       path: '/teacher/grades/import',
       icon: ClipboardList,
     },
+    {
+      label: 'nav.knowledgeBase',
+      path: '/teacher/knowledge',
+      icon: LibraryBig,
+    },
   ],
   student: [
     { label: 'nav.myProfile', path: '/student/profile', icon: UserRound },
     { label: 'nav.myGrades', path: '/student/grades', icon: BarChart3 },
     { label: 'nav.materials', path: '/student/files', icon: FileText },
+    { label: 'nav.aiTutor', path: '/student/tutor', icon: Sparkles },
   ],
 };
 

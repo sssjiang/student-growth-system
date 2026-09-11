@@ -69,6 +69,13 @@ def encode_interest(text: str):
     return None
 
 
+def encode_texts(texts):
+    model = _load_model()
+    if model and texts:
+        return model.encode(list(texts), normalize_embeddings=True).tolist()
+    return None
+
+
 def embedding_model_name():
     return os.getenv("EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
 

@@ -35,6 +35,24 @@ class TeacherAPI {
 
   analyzeCredential = (fileId) =>
     api.post(`/teacher/credentials/${fileId}/analysis`, {});
+
+  getKnowledgeDocuments = () => api.get('/teacher/knowledge');
+
+  uploadKnowledgeDocument = (file, metadata) => {
+    const form = new FormData();
+    form.append('file', file);
+    Object.entries(metadata).forEach(([key, value]) => form.append(key, value));
+    return api.post('/teacher/knowledge', form);
+  };
+
+  deleteKnowledgeDocument = (documentId) =>
+    api.delete(`/teacher/knowledge/${documentId}`);
+
+  reindexKnowledgeDocument = (documentId) =>
+    api.post(`/teacher/knowledge/${documentId}/reindex`, {});
+
+  previewKnowledgeDocument = (documentId) =>
+    api.getBlob(`/teacher/knowledge/${documentId}/file?preview=1`);
 }
 
 export default new TeacherAPI();
