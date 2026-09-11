@@ -7,6 +7,19 @@ from typing import Iterator
 
 BASE_DIR = Path(__file__).resolve().parent
 
+STUDENT_FILE_COLUMNS = {
+    "title": "TEXT NOT NULL DEFAULT ''",
+    "credential_type": "TEXT NOT NULL DEFAULT 'other'",
+    "issuer": "TEXT NOT NULL DEFAULT ''",
+    "awarded_at": "TEXT NOT NULL DEFAULT ''",
+    "description": "TEXT NOT NULL DEFAULT ''",
+    "status": "TEXT NOT NULL DEFAULT 'pending'",
+    "review_comment": "TEXT NOT NULL DEFAULT ''",
+    "reviewed_by": "INTEGER",
+    "reviewed_at": "TEXT",
+    "updated_at": "TEXT NOT NULL DEFAULT ''",
+}
+
 
 def database_path() -> Path:
     configured = os.getenv("DATABASE_PATH")
@@ -36,6 +49,17 @@ def get_db() -> Iterator[sqlite3.Connection]:
 def init_db() -> None:
     with get_db() as db:
         db.executescript((BASE_DIR / "schema.sql").read_text(encoding="utf-8"))
+        existing = {
+            row["name"] for row in db.execute("PRAGMA table_info(student_files)")
+        }
+        for name, definition in STUDENT_FILE_COLUMNS.items():
+            if name not in existing:
+                db.execute(f"ALTER TABLE student_files ADD COLUMN {name} {definition}")
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_student_files_status "
+            "ON student_files(status, uploaded_at)"
+        )
+
 
 
 def rows_to_dicts(rows):

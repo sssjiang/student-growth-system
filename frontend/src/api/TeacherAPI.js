@@ -21,6 +21,14 @@ class TeacherAPI {
     form.append('file', file);
     return api.post('/teacher/grades/import', form);
   };
+
+  getCredentials = (status = '') =>
+    api.get(`/teacher/credentials${status ? `?status=${status}` : ''}`);
+
+  reviewCredential = (fileId, status, comment) =>
+    api.put(`/teacher/credentials/${fileId}/review`, { status, comment });
+
+  previewCredential = (fileId) => api.getBlob(`/files/${fileId}?preview=1`);
 }
 
 export default new TeacherAPI();

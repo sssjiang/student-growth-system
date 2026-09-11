@@ -25,6 +25,15 @@ class ApiClient {
     return data;
   }
 
+  async getBlob(path) {
+    const token = localStorage.getItem('student_token');
+    const response = await fetch(`${API_ROOT}${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) throw new Error('文件读取失败，请稍后重试');
+    return response.blob();
+  }
+
   get(path) {
     return this.request(path);
   }
@@ -38,6 +47,10 @@ class ApiClient {
 
   put(path, body) {
     return this.request(path, { method: 'PUT', body: JSON.stringify(body) });
+  }
+
+  delete(path) {
+    return this.request(path, { method: 'DELETE' });
   }
 }
 

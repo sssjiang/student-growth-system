@@ -1,3 +1,4 @@
+export { default as CredentialReviewPage } from './CredentialReviewPage';
 export { default as GradeImportPage } from './GradeImportPage';
 export { default as SmartSearchPage } from './SmartSearchPage';
 export { default as StudentDetailPage } from './StudentDetailPage';

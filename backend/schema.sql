@@ -52,12 +52,23 @@ CREATE TABLE IF NOT EXISTS grades (
 CREATE TABLE IF NOT EXISTS student_files (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   student_id INTEGER NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  credential_type TEXT NOT NULL DEFAULT 'other',
+  issuer TEXT NOT NULL DEFAULT '',
+  awarded_at TEXT NOT NULL DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
   original_name TEXT NOT NULL,
   stored_name TEXT NOT NULL,
   mime_type TEXT DEFAULT '',
   size INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
+  review_comment TEXT NOT NULL DEFAULT '',
+  reviewed_by INTEGER,
+  reviewed_at TEXT,
   uploaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE,
+  FOREIGN KEY(reviewed_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS reports (

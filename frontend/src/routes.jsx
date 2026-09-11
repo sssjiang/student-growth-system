@@ -3,6 +3,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
 import LoginPage from '@/pages/LoginPage';
 import {
+  CredentialReviewPage,
   GradeImportPage,
   SmartSearchPage,
   StudentDetailPage,
@@ -28,6 +29,7 @@ const routes = [
       { path: 'search', element: <SmartSearchPage /> },
       { path: 'students', element: <StudentDirectoryPage /> },
       { path: 'students/:studentId', element: <StudentDetailPage /> },
+      { path: 'credentials', element: <CredentialReviewPage /> },
       { path: 'grades/import', element: <GradeImportPage /> },
     ],
   },

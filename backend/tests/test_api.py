@@ -1,3 +1,4 @@
+import io
 import os
 import tempfile
 import unittest
@@ -48,6 +49,65 @@ class ApiFlowTest(unittest.TestCase):
             "/api/teacher/search", json={"query": "篮球活动"}, headers=headers
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_credential_upload_review_resubmit_and_delete(self):
+        student_headers = self.login("student1", "student123")
+        uploaded = self.client.post(
+            "/api/student/files",
+            data={
+                "title": "校园摄影大赛一等奖",
+                "credential_type": "艺术活动",
+                "issuer": "学校艺术中心",
+                "awarded_at": "2026-05-20",
+                "description": "校庆主题摄影作品",
+                "file": (io.BytesIO(b"fake image content"), "certificate.png"),
+            },
+            headers=student_headers,
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(uploaded.status_code, 201)
+        credential = uploaded.get_json()["files"][0]
+        self.assertEqual(credential["status"], "pending")
+
+        other_student_headers = self.login("student2", "student123")
+        denied = self.client.delete(
+            f"/api/student/files/{credential['id']}", headers=other_student_headers
+        )
+        self.assertEqual(denied.status_code, 404)
+
+        teacher_headers = self.login("teacher", "teacher123")
+        rejected = self.client.put(
+            f"/api/teacher/credentials/{credential['id']}/review",
+            json={"status": "rejected", "comment": "请补充清晰的获奖日期"},
+            headers=teacher_headers,
+        )
+        self.assertEqual(rejected.status_code, 200)
+
+        resubmitted = self.client.post(
+            f"/api/student/files/{credential['id']}/resubmit",
+            data={
+                "title": credential["title"],
+                "credential_type": credential["credential_type"],
+                "issuer": credential["issuer"],
+                "awarded_at": "2026-05-21",
+                "description": credential["description"],
+            },
+            headers=student_headers,
+        )
+        self.assertEqual(resubmitted.status_code, 200)
+        self.assertEqual(resubmitted.get_json()["files"][0]["status"], "pending")
+
+        preview = self.client.get(
+            f"/api/files/{credential['id']}?preview=1", headers=student_headers
+        )
+        self.assertEqual(preview.status_code, 200)
+        self.assertIn("inline", preview.headers["Content-Disposition"])
+        preview.close()
+
+        deleted = self.client.delete(
+            f"/api/student/files/{credential['id']}", headers=student_headers
+        )
+        self.assertEqual(deleted.status_code, 200)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BadgeCheck,
   ClipboardList,
   FileText,
   LayoutDashboard,
@@ -21,6 +22,7 @@ const NAV_ITEMS = {
     { label: '工作台', path: '/teacher/dashboard', icon: LayoutDashboard },
     { label: '智能匹配', path: '/teacher/search', icon: Search },
     { label: '学生档案', path: '/teacher/students', icon: UsersRound },
+    { label: '凭证审核', path: '/teacher/credentials', icon: BadgeCheck },
     { label: '成绩管理', path: '/teacher/grades/import', icon: ClipboardList },
   ],
   student: [

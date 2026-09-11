@@ -2,7 +2,6 @@ import csv
 import io
 import json
 import os
-import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
@@ -14,11 +13,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from database import get_db, init_db
 from services.grade_report import generate_report
+from services.file_storage import InvalidFileError, LocalFileStorage
 from services.semantic_search import encode_interest, search_students
 
 
 BASE_DIR = Path(__file__).resolve().parent
-ALLOWED_EXTENSIONS = {"pdf", "doc", "docx", "png", "jpg", "jpeg", "txt"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
@@ -33,6 +32,7 @@ def create_app(test_config=None):
         app.config.update(test_config)
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
+    storage = LocalFileStorage(app.config["UPLOAD_FOLDER"])
     init_db()
 
     def token_required(*roles):
@@ -195,23 +195,80 @@ def create_app(test_config=None):
                 uploaded = request.files.get("file")
                 if not uploaded or not uploaded.filename:
                     return error("请选择文件")
-                suffix = uploaded.filename.rsplit(".", 1)[-1].lower() if "." in uploaded.filename else ""
-                if suffix not in ALLOWED_EXTENSIONS:
-                    return error("仅支持 PDF、Word、图片和 TXT 文件")
-                stored_name = f"{uuid.uuid4().hex}.{suffix}"
-                uploaded.save(Path(app.config["UPLOAD_FOLDER"]) / stored_name)
-                size = (Path(app.config["UPLOAD_FOLDER"]) / stored_name).stat().st_size
-                original_name = Path(uploaded.filename.replace("\\", "/")).name[:255]
+                metadata, metadata_error = parse_credential_metadata(request.form)
+                if metadata_error:
+                    return error(metadata_error)
+                try:
+                    saved = storage.save(uploaded)
+                except InvalidFileError as exc:
+                    return error(str(exc))
                 db.execute(
-                    "INSERT INTO student_files(student_id,original_name,stored_name,mime_type,size) VALUES(?,?,?,?,?)",
-                    (student["id"], original_name, stored_name,
-                     uploaded.mimetype or "", size),
+                    """INSERT INTO student_files(
+                         student_id,title,credential_type,issuer,awarded_at,description,
+                         original_name,stored_name,mime_type,size,status,updated_at
+                       ) VALUES(?,?,?,?,?,?,?,?,?,?,'pending',CURRENT_TIMESTAMP)""",
+                    (student["id"], *metadata, saved["original_name"], saved["stored_name"],
+                     saved["mime_type"], saved["size"]),
                 )
-            files = [dict(row) for row in db.execute(
-                "SELECT id,original_name,mime_type,size,uploaded_at FROM student_files WHERE student_id=? ORDER BY id DESC",
-                (student["id"],),
-            )]
+            files = credential_rows(db, "WHERE sf.student_id=?", (student["id"],))
         return jsonify({"files": files}), 201 if request.method == "POST" else 200
+
+    @app.delete("/api/student/files/<int:file_id>")
+    @token_required("student")
+    def delete_student_file(file_id):
+        with get_db() as db:
+            row = db.execute(
+                """SELECT sf.stored_name FROM student_files sf
+                   JOIN students s ON s.id=sf.student_id
+                   WHERE sf.id=? AND s.user_id=?""",
+                (file_id, g.user["id"]),
+            ).fetchone()
+            if not row:
+                return error("凭证不存在", 404)
+            db.execute("DELETE FROM student_files WHERE id=?", (file_id,))
+        storage.delete(row["stored_name"])
+        return jsonify({"message": "凭证已删除"})
+
+    @app.post("/api/student/files/<int:file_id>/resubmit")
+    @token_required("student")
+    def resubmit_student_file(file_id):
+        with get_db() as db:
+            row = db.execute(
+                """SELECT sf.* FROM student_files sf JOIN students s ON s.id=sf.student_id
+                   WHERE sf.id=? AND s.user_id=?""",
+                (file_id, g.user["id"]),
+            ).fetchone()
+            if not row:
+                return error("凭证不存在", 404)
+            if row["status"] != "rejected":
+                return error("只有被驳回的凭证可以重新提交", 409)
+            metadata, metadata_error = parse_credential_metadata(request.form)
+            if metadata_error:
+                return error(metadata_error)
+
+            uploaded = request.files.get("file")
+            saved = None
+            if uploaded and uploaded.filename:
+                try:
+                    saved = storage.save(uploaded)
+                except InvalidFileError as exc:
+                    return error(str(exc))
+
+            file_values = (
+                (saved["original_name"], saved["stored_name"], saved["mime_type"], saved["size"])
+                if saved else (row["original_name"], row["stored_name"], row["mime_type"], row["size"])
+            )
+            db.execute(
+                """UPDATE student_files SET title=?,credential_type=?,issuer=?,awarded_at=?,
+                   description=?,original_name=?,stored_name=?,mime_type=?,size=?,status='pending',
+                   review_comment='',reviewed_by=NULL,reviewed_at=NULL,updated_at=CURRENT_TIMESTAMP
+                   WHERE id=?""",
+                (*metadata, *file_values, file_id),
+            )
+            files = credential_rows(db, "WHERE sf.student_id=?", (row["student_id"],))
+        if saved:
+            storage.delete(row["stored_name"])
+        return jsonify({"message": "凭证已重新提交", "files": files})
 
     @app.get("/api/teacher/dashboard")
     @token_required("teacher")
@@ -232,6 +289,47 @@ def create_app(test_config=None):
         with get_db() as db:
             students = student_list(db)
         return jsonify({"students": students})
+
+    @app.get("/api/teacher/credentials")
+    @token_required("teacher")
+    def teacher_credentials():
+        status = request.args.get("status", "")
+        if status and status not in {"pending", "approved", "rejected"}:
+            return error("审核状态不正确")
+        where = "WHERE sf.status=?" if status else ""
+        params = (status,) if status else ()
+        with get_db() as db:
+            credentials = credential_rows(db, where, params)
+            counts = {
+                row["status"]: row["count"]
+                for row in db.execute(
+                    "SELECT status,COUNT(*) count FROM student_files GROUP BY status"
+                )
+            }
+        return jsonify({
+            "credentials": credentials,
+            "counts": {key: counts.get(key, 0) for key in ("pending", "approved", "rejected")},
+        })
+
+    @app.put("/api/teacher/credentials/<int:file_id>/review")
+    @token_required("teacher")
+    def review_credential(file_id):
+        data = request.get_json(silent=True) or {}
+        status = data.get("status")
+        comment = str(data.get("comment", "")).strip()[:500]
+        if status not in {"approved", "rejected"}:
+            return error("请选择通过或驳回")
+        if status == "rejected" and not comment:
+            return error("驳回时请填写审核意见")
+        with get_db() as db:
+            if not db.execute("SELECT 1 FROM student_files WHERE id=?", (file_id,)).fetchone():
+                return error("凭证不存在", 404)
+            db.execute(
+                """UPDATE student_files SET status=?,review_comment=?,reviewed_by=?,
+                   reviewed_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+                (status, comment, g.user["id"], file_id),
+            )
+        return jsonify({"message": "审核结果已保存"})
 
     @app.post("/api/teacher/search")
     @token_required("teacher")
@@ -345,13 +443,48 @@ def create_app(test_config=None):
                 owner = db.execute("SELECT id FROM students WHERE user_id=?", (g.user["id"],)).fetchone()
                 if not owner or owner["id"] != row["student_id"]:
                     return error("没有访问此文件的权限", 403)
-        return send_from_directory(app.config["UPLOAD_FOLDER"], row["stored_name"], download_name=row["original_name"])
+        return send_from_directory(
+            app.config["UPLOAD_FOLDER"],
+            row["stored_name"],
+            download_name=row["original_name"],
+            mimetype=row["mime_type"],
+            as_attachment=request.args.get("preview") != "1",
+        )
 
     return app
 
 
 def error(message, status=400):
     return jsonify({"error": message}), status
+
+
+def parse_credential_metadata(form):
+    title = str(form.get("title", "")).strip()[:100]
+    credential_type = str(form.get("credential_type", "other")).strip()[:40]
+    issuer = str(form.get("issuer", "")).strip()[:100]
+    awarded_at = str(form.get("awarded_at", "")).strip()[:10]
+    description = str(form.get("description", "")).strip()[:500]
+    if not title:
+        return None, "请填写荣誉名称"
+    if not credential_type:
+        return None, "请选择荣誉类型"
+    return (title, credential_type, issuer, awarded_at, description), None
+
+
+def credential_rows(db, where="", params=()):
+    return [
+        dict(row)
+        for row in db.execute(
+            f"""SELECT sf.id,sf.student_id,s.name student_name,s.student_no,s.grade,s.class_name,
+                       sf.title,sf.credential_type,sf.issuer,sf.awarded_at,sf.description,
+                       sf.original_name,sf.mime_type,sf.size,sf.status,sf.review_comment,
+                       sf.reviewed_at,sf.uploaded_at,sf.updated_at,u.display_name reviewer_name
+                FROM student_files sf JOIN students s ON s.id=sf.student_id
+                LEFT JOIN users u ON u.id=sf.reviewed_by {where}
+                ORDER BY sf.updated_at DESC,sf.id DESC""",
+            params,
+        )
+    ]
 
 
 def profile_for_user(db, user_id):
