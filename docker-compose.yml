@@ -1,28 +1,63 @@
+x-backend-environment: &backend-environment
+  SECRET_KEY: ${SECRET_KEY:-local-development-key}
+  DATABASE_PATH: /app/data/students.db
+  UPLOAD_FOLDER: /app/uploads
+  AI_REPORT_ENABLED: ${AI_REPORT_ENABLED:-true}
+  AI_CREDENTIAL_REVIEW_ENABLED: ${AI_CREDENTIAL_REVIEW_ENABLED:-true}
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/1
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-}
+  LongCat_API_KEY: ${LongCat_API_KEY:-}
+  OpenAI_endpoint: ${OpenAI_endpoint:-}
+  LongCat_MODEL: ${LongCat_MODEL:-}
+
+x-backend-volumes: &backend-volumes
+  - student_data:/app/data
+  - student_uploads:/app/uploads
+
 services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   backend:
     build: ./backend
-    environment:
-      SECRET_KEY: ${SECRET_KEY:-local-development-key}
-      DATABASE_PATH: /app/data/students.db
-      UPLOAD_FOLDER: /app/uploads
-      AI_REPORT_ENABLED: ${AI_REPORT_ENABLED:-true}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-}
-      LongCat_API_KEY: ${LongCat_API_KEY:-}
-      OpenAI_endpoint: ${OpenAI_endpoint:-}
-      LongCat_MODEL: ${LongCat_MODEL:-}
-    volumes:
-      - student_data:/app/data
-      - student_uploads:/app/uploads
+    environment: *backend-environment
+    volumes: *backend-volumes
+    depends_on:
+      redis:
+        condition: service_healthy
     ports:
       - "5001:5001"
+
+  celery-worker:
+    build: ./backend
+    command: celery -A celery_app.celery_app worker --loglevel=INFO --concurrency=2 --queues=credential-analysis
+    environment: *backend-environment
+    volumes: *backend-volumes
+    depends_on:
+      redis:
+        condition: service_healthy
+
   frontend:
     build: ./frontend
     depends_on:
       - backend
     ports:
       - "5173:80"
+
 volumes:
+  redis_data:
   student_data:
   student_uploads:

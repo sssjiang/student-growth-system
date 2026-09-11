@@ -38,10 +38,10 @@ class DatabaseMigrationTest(unittest.TestCase):
                     }
 
             self.assertTrue(
-                {"title", "credential_type", "status", "review_comment"}.issubset(columns)
+                {"title", "credential_type", "status", "review_comment", "revision"}.issubset(columns)
             )
             self.assertTrue(
-                {"file_id", "analysis_status", "comparisons"}.issubset(
+                {"file_id", "analysis_status", "comparisons", "analysis_revision", "job_id"}.issubset(
                     ai_review_columns
                 )
             )

@@ -74,7 +74,7 @@ function FilePreviewModal({
       .then((data) => {
         if (!active) return;
         setAnalysis(data.analysis);
-        if (!data.analysis || data.analysis.analysis_status !== 'completed') {
+        if (!data.analysis) {
           runAnalysis();
         } else {
           setAnalyzing(false);
@@ -90,6 +90,25 @@ function FilePreviewModal({
       active = false;
     };
   }, [credential.id, loadAnalysis, runAnalysis]);
+
+  useEffect(() => {
+    if (
+      !loadAnalysis ||
+      !['pending', 'processing'].includes(analysis?.analysis_status)
+    ) {
+      return undefined;
+    }
+    const timer = window.setInterval(() => {
+      loadAnalysis(credential.id)
+        .then((data) => {
+          if (mounted.current) setAnalysis(data.analysis);
+        })
+        .catch((err) => {
+          if (mounted.current) setAnalysisError(err.message);
+        });
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [analysis?.analysis_status, credential.id, loadAnalysis]);
 
   const isImage = credential.mime_type.startsWith('image/');
 
@@ -131,6 +150,31 @@ function FilePreviewModal({
                 <p>{t('aiReview.analyzingHint')}</p>
               </div>
             )}
+            {!analyzing &&
+              !analysisError &&
+              ['pending', 'processing'].includes(analysis?.analysis_status) && (
+                <div className="ai-review-loading">
+                  <LoaderCircle className="spin" />
+                  <b>
+                    {t(
+                      analysis.analysis_status === 'pending'
+                        ? 'aiReview.queued'
+                        : 'aiReview.processing'
+                    )}
+                  </b>
+                  <p>
+                    {t(
+                      analysis.analysis_status === 'pending'
+                        ? 'aiReview.queuedHint'
+                        : 'aiReview.processingHint'
+                    )}
+                  </p>
+                  <button className="secondary" onClick={runAnalysis}>
+                    <RefreshCw size={14} />
+                    {t('aiReview.reanalyze')}
+                  </button>
+                </div>
+              )}
             {!analyzing && analysisError && (
               <div className="ai-review-loading error">
                 <TriangleAlert />
@@ -142,9 +186,28 @@ function FilePreviewModal({
                 </button>
               </div>
             )}
-            {!analyzing && !analysisError && analysis && (
-              <AnalysisResult analysis={analysis} onRetry={runAnalysis} t={t} />
-            )}
+            {!analyzing &&
+              !analysisError &&
+              analysis?.analysis_status === 'failed' && (
+                <div className="ai-review-loading error">
+                  <TriangleAlert />
+                  <b>{t('aiReview.failed')}</b>
+                  <p>{t('aiReview.failedHint')}</p>
+                  <button className="secondary" onClick={runAnalysis}>
+                    <RefreshCw size={14} />
+                    {t('aiReview.retry')}
+                  </button>
+                </div>
+              )}
+            {!analyzing &&
+              !analysisError &&
+              analysis?.analysis_status === 'completed' && (
+                <AnalysisResult
+                  analysis={analysis}
+                  onRetry={runAnalysis}
+                  t={t}
+                />
+              )}
           </aside>
         )}
       </div>

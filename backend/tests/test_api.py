@@ -62,22 +62,24 @@ class ApiFlowTest(unittest.TestCase):
 
     def test_credential_upload_review_undo_resubmit_and_delete(self):
         student_headers = self.login("student1", "student123")
-        uploaded = self.client.post(
-            "/api/student/files",
-            data={
-                "title": "校园摄影大赛一等奖",
-                "credential_type": "艺术活动",
-                "issuer": "学校艺术中心",
-                "awarded_at": "2026-05-20",
-                "description": "校庆主题摄影作品",
-                "file": (io.BytesIO(b"fake image content"), "certificate.png"),
-            },
-            headers=student_headers,
-            content_type="multipart/form-data",
-        )
+        with patch("app.enqueue_credential_analysis", return_value="upload-job") as enqueue:
+            uploaded = self.client.post(
+                "/api/student/files",
+                data={
+                    "title": "校园摄影大赛一等奖",
+                    "credential_type": "艺术活动",
+                    "issuer": "学校艺术中心",
+                    "awarded_at": "2026-05-20",
+                    "description": "校庆主题摄影作品",
+                    "file": (io.BytesIO(b"fake image content"), "certificate.png"),
+                },
+                headers=student_headers,
+                content_type="multipart/form-data",
+            )
         self.assertEqual(uploaded.status_code, 201)
         credential = uploaded.get_json()["files"][0]
         self.assertEqual(credential["status"], "pending")
+        enqueue.assert_called_once_with(credential["id"], 1)
 
         other_student_headers = self.login("student2", "student123")
         denied = self.client.delete(
@@ -86,46 +88,24 @@ class ApiFlowTest(unittest.TestCase):
         self.assertEqual(denied.status_code, 404)
 
         teacher_headers = self.login("teacher", "teacher123")
-        analysis_result = {
-            "extracted_text": "校园摄影大赛一等奖 学校艺术中心",
-            "extraction_method": "pdf-text",
-            "extraction_confidence": 1.0,
-            "extracted_fields": {
-                "award_title": {"value": credential["title"], "evidence": credential["title"]}
-            },
-            "comparisons": [
-                {
-                    "field": "award_title",
-                    "submitted": credential["title"],
-                    "extracted": credential["title"],
-                    "evidence": credential["title"],
-                    "status": "match",
-                    "confidence": 1.0,
-                }
-            ],
-            "overall_status": "consistent",
-            "overall_confidence": 1.0,
-            "generated_by": "local-rules",
-            "error_message": "",
-        }
-        with patch("app.analyze_credential", return_value=analysis_result):
+        with patch(
+            "app.enqueue_credential_analysis", return_value="manual-job"
+        ) as enqueue:
             analyzed = self.client.post(
                 f"/api/teacher/credentials/{credential['id']}/analysis",
                 headers=teacher_headers,
             )
-        self.assertEqual(analyzed.status_code, 200)
+        self.assertEqual(analyzed.status_code, 202)
         self.assertEqual(
-            analyzed.get_json()["analysis"]["overall_status"], "consistent"
+            analyzed.get_json()["analysis"]["analysis_status"], "pending"
         )
+        enqueue.assert_called_once_with(credential["id"], 1)
         cached_analysis = self.client.get(
             f"/api/teacher/credentials/{credential['id']}/analysis",
             headers=teacher_headers,
         )
         self.assertEqual(cached_analysis.status_code, 200)
-        self.assertEqual(
-            cached_analysis.get_json()["analysis"]["comparisons"][0]["status"],
-            "match",
-        )
+        self.assertEqual(cached_analysis.get_json()["analysis"]["analysis_status"], "pending")
 
         rejected = self.client.put(
             f"/api/teacher/credentials/{credential['id']}/review",
@@ -158,22 +138,27 @@ class ApiFlowTest(unittest.TestCase):
         )
         self.assertEqual(rejected.status_code, 200)
 
-        resubmitted = self.client.post(
-            f"/api/student/files/{credential['id']}/resubmit",
-            data={
-                "title": credential["title"],
-                "credential_type": credential["credential_type"],
-                "issuer": credential["issuer"],
-                "awarded_at": "2026-05-21",
-                "description": credential["description"],
-            },
-            headers=student_headers,
-        )
+        with patch(
+            "app.enqueue_credential_analysis", return_value="resubmit-job"
+        ) as enqueue:
+            resubmitted = self.client.post(
+                f"/api/student/files/{credential['id']}/resubmit",
+                data={
+                    "title": credential["title"],
+                    "credential_type": credential["credential_type"],
+                    "issuer": credential["issuer"],
+                    "awarded_at": "2026-05-21",
+                    "description": credential["description"],
+                },
+                headers=student_headers,
+            )
         self.assertEqual(resubmitted.status_code, 200)
         self.assertEqual(resubmitted.get_json()["files"][0]["status"], "pending")
         self.assertEqual(
             resubmitted.get_json()["files"][0]["ai_analysis_status"], "pending"
         )
+        self.assertEqual(resubmitted.get_json()["files"][0]["revision"], 2)
+        enqueue.assert_called_once_with(credential["id"], 2)
 
         approved = self.client.put(
             f"/api/teacher/credentials/{credential['id']}/review",

@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS student_files (
   review_comment TEXT NOT NULL DEFAULT '',
   reviewed_by INTEGER,
   reviewed_at TEXT,
+  revision INTEGER NOT NULL DEFAULT 1,
   uploaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE,
@@ -85,6 +86,8 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE TABLE IF NOT EXISTS credential_ai_reviews (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   file_id INTEGER NOT NULL UNIQUE,
+  analysis_revision INTEGER NOT NULL DEFAULT 1,
+  job_id TEXT NOT NULL DEFAULT '',
   analysis_status TEXT NOT NULL DEFAULT 'pending'
     CHECK(analysis_status IN ('pending', 'processing', 'completed', 'failed')),
   overall_status TEXT NOT NULL DEFAULT '',

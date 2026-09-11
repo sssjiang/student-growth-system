@@ -13,6 +13,7 @@
 - 纯 Python 线性回归趋势计算，所有预测数字先由程序得出
 - 本地 `sentence-transformers` 中文语义检索；模型不可用时自动使用离线关键词相似度
 - LangGraph 编排成绩计算与 OpenAI 兼容模型报告；没有 API Key 时生成完整的本地规则报告
+- Celery + Redis 在学生提交后异步执行凭证 OCR 和 AI 一致性核对
 - 教师可将包含成绩趋势、兴趣特长和个性化建议的成长报告下载为 PDF
 - 响应式界面、成绩折线图和演示数据
 - 英语、粤语和简体中文界面，语言选择会保存在浏览器中
@@ -24,6 +25,8 @@ student-growth-system/
 ├── backend/
 │   ├── app.py                    # Flask API 与 JWT 权限
 │   ├── database.py               # SQLite 连接和初始化
+│   ├── celery_app.py             # Celery 与 Redis 配置
+│   ├── tasks.py                  # 后台凭证分析任务
 │   ├── schema.sql                # 用户、学生、兴趣、成绩、文件、报告表
 │   ├── seed.py                   # 演示数据
 │   └── services/
@@ -52,6 +55,15 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python seed.py
 python app.py
+```
+
+凭证分析通过 Celery 后台执行。启动 Redis 并在另一个终端启动 Worker：
+
+```bash
+docker compose up -d redis
+cd backend
+source .venv/bin/activate
+celery -A celery_app.celery_app worker --loglevel=INFO --queues=credential-analysis
 ```
 
 基础依赖已包含 LangGraph 与 OpenAI 兼容模型客户端。需要完整 embedding 能力时安装：
@@ -118,11 +130,13 @@ export OPENAI_MODEL=your-model
 
 学生上传凭证时填写荣誉名称、类型、颁发机构、日期和说明。新凭证进入 `pending` 状态；教师在“凭证审核”页面预览后选择通过或驳回。被驳回的凭证会向学生展示审核意见，学生可以修改资料、选择是否替换原文件并重新提交。
 
-教师首次打开凭证预览时，系统通过 LangGraph 执行“本地文字提取/OCR → OpenAI 兼容模型
-结构化字段提取 → 程序一致性比对”，并在文件右侧展示学生姓名、奖项名称、颁发机构、日期和
-荣誉类型的逐项结果。结果缓存在 `credential_ai_reviews` 表中；重复预览直接读取缓存，学生重新
-提交后自动使旧分析失效。未配置模型时使用本地文字包含规则，无法提取文字时明确交由老师人工
-核对。AI 结果只辅助核对填写内容与文件是否一致，不自动决定审核结果。
+学生正式提交凭证后，系统会自动创建 Celery 任务，由 Worker 通过 LangGraph 执行“本地文字
+提取/OCR → OpenAI 兼容模型结构化字段提取 → 程序一致性比对”。教师打开预览时直接查看任务
+状态和已有结果，分析尚未完成时页面会自动轮询。结果缓存在 `credential_ai_reviews` 表中；每次
+重新提交都会增加凭证版本，旧任务只有在版本号和任务 ID 同时匹配时才能写入结果，因此不会
+覆盖新文件的分析。删除凭证后，尚未执行的旧任务会在读取数据库时自动结束。未配置模型时使用
+本地文字包含规则，无法提取文字时明确交由老师人工核对。AI 结果只辅助核对填写内容与文件是否
+一致，不自动决定审核结果。
 
 开发环境使用 `backend/uploads` 本地存储，文件操作集中在 `LocalFileStorage` 适配器中。生产环境可以实现同样接口的 OSS 存储适配器，业务路由和审核流程无需随之改写。
 
