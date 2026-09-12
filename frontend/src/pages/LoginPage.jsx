@@ -23,7 +23,11 @@ function LoginPage() {
   useEffect(() => {
     if (isAuthenticated) {
       navigate(
-        user.role === 'teacher' ? '/teacher/dashboard' : '/student/profile',
+        user.role === 'admin'
+          ? '/admin/dashboard'
+          : user.role === 'teacher'
+            ? '/teacher/dashboard'
+            : '/student/profile',
         { replace: true }
       );
     }
@@ -44,9 +48,11 @@ function LoginPage() {
         const session = await AuthAPI.login(form);
         signIn(session);
         const fallback =
-          session.user.role === 'teacher'
-            ? '/teacher/dashboard'
-            : '/student/profile';
+          session.user.role === 'admin'
+            ? '/admin/dashboard'
+            : session.user.role === 'teacher'
+              ? '/teacher/dashboard'
+              : '/student/profile';
         navigate(location.state?.from?.pathname || fallback, { replace: true });
       }
     } catch (err) {
@@ -57,9 +63,11 @@ function LoginPage() {
   };
   const demo = (role) =>
     setForm(
-      role === 'teacher'
-        ? { ...form, username: 'teacher', password: 'teacher123' }
-        : { ...form, username: 'student1', password: 'student123' }
+      role === 'admin'
+        ? { ...form, username: 'admin', password: 'admin123' }
+        : role === 'teacher'
+          ? { ...form, username: 'teacher', password: 'teacher123' }
+          : { ...form, username: 'student1', password: 'student123' }
     );
   return (
     <div className="login-page">
@@ -164,6 +172,9 @@ function LoginPage() {
               <span>{t('login.quickDemo')}</span>
               <button onClick={() => demo('teacher')}>
                 {t('login.teacherAccount')}
+              </button>
+              <button onClick={() => demo('admin')}>
+                {t('login.adminAccount')}
               </button>
               <button onClick={() => demo('student')}>
                 {t('login.studentAccount')}

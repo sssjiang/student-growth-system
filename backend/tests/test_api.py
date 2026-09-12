@@ -37,6 +37,34 @@ class ApiFlowTest(unittest.TestCase):
             expected = Path(__file__).resolve().parents[2] / "backend" / "uploads"
             self.assertEqual(upload_folder_path(), expected)
 
+    def test_admin_can_access_management_apis_and_create_teacher(self):
+        headers = self.login("admin", "admin123")
+        dashboard = self.client.get("/api/admin/dashboard", headers=headers)
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertIn("students", dashboard.get_json()["stats"])
+
+        users = self.client.get("/api/admin/users", headers=headers)
+        self.assertEqual(users.status_code, 200)
+        self.assertTrue(any(item["role"] == "admin" for item in users.get_json()["users"]))
+
+        created = self.client.post(
+            "/api/admin/users",
+            json={
+                "username": "teacher2",
+                "password": "teacher234",
+                "display_name": "李老师",
+                "role": "teacher",
+            },
+            headers=headers,
+        )
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.get_json()["user"]["role"], "teacher")
+        self.login("teacher2", "teacher234")
+
+        student_headers = self.login("student1", "student123")
+        denied = self.client.get("/api/admin/dashboard", headers=student_headers)
+        self.assertEqual(denied.status_code, 403)
+
     def test_teacher_can_search_and_generate_report(self):
         headers = self.login("teacher", "teacher123")
         result = self.client.post(
@@ -110,6 +138,18 @@ class ApiFlowTest(unittest.TestCase):
         )
         self.assertEqual(history.status_code, 200)
         self.assertEqual(len(history.get_json()["messages"]), 2)
+
+        admin_headers = self.login("admin", "admin123")
+        traces = self.client.get("/api/admin/rag-traces", headers=admin_headers)
+        self.assertEqual(traces.status_code, 200)
+        trace = traces.get_json()["traces"][0]
+        self.assertEqual(trace["question"], "什么是函数单调性？")
+        self.assertEqual(trace["selected_count"], 1)
+        trace_detail = self.client.get(
+            f"/api/admin/rag-traces/{trace['id']}", headers=admin_headers
+        )
+        self.assertEqual(trace_detail.status_code, 200)
+        self.assertEqual(len(trace_detail.get_json()["chunks"]), 1)
 
         deleted = self.client.delete(
             f"/api/teacher/knowledge/{document['id']}", headers=teacher_headers

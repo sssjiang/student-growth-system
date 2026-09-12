@@ -59,7 +59,10 @@
     "conversationMissing": "Tutoring conversation not found",
     "conversationSubjectLocked": "The subject cannot be changed within a conversation",
     "questionRequired": "Enter your question",
-    "knowledgeFileType": "Materials must be PDF, DOCX, TXT, or an image"
+    "knowledgeFileType": "Materials must be PDF, DOCX, TXT, or an image",
+    "adminAccountRequired": "Enter an account, display name, and role",
+    "usernameExists": "The username already exists",
+    "traceMissing": "The debug trace was not found"
   },
   "brand": {
     "mark": "知",
@@ -69,10 +72,18 @@
   "nav": {
     "teacherWorkspace": "Teacher workspace",
     "studentWorkspace": "Student workspace",
+    "adminWorkspace": "System administration",
     "teacherCenter": "Teaching center",
     "studentCenter": "Growth center",
+    "adminCenter": "Administration center",
     "teacherRole": "Homeroom teacher",
     "studentRole": "Student",
+    "adminRole": "System administrator",
+    "adminDashboard": "Overview",
+    "userManagement": "Account management",
+    "indexManagement": "Materials & indexing",
+    "aiObservability": "AI observability",
+    "systemSettings": "System settings",
     "dashboard": "Dashboard",
     "smartMatch": "Smart matching",
     "students": "Student profiles",
@@ -116,6 +127,7 @@
     "quickDemo": "Quick demo",
     "teacherAccount": "Teacher account",
     "studentAccount": "Student account",
+    "adminAccount": "Administrator account",
     "copyright": "© 2026 Zhixing Student Growth Center · Every improvement deserves to be seen"
   },
   "profile": {
@@ -463,6 +475,97 @@
     "exportSuccess": "PDF report downloaded",
     "exportFailed": "Could not create the PDF. Please try again.",
     "pdfFilename": "{{name}} growth report"
+  },
+  "admin": {
+    "dashboard": {
+      "eyebrow": "System administration",
+      "title": "School operations and AI services",
+      "description": "Monitor accounts, learning material indexing, and tutoring requests.",
+      "recent": "Recent AI questions",
+      "recentDescription": "Spot empty retrievals, slow responses, and answer issues.",
+      "noTraces": "No RAG traces yet. New student questions will appear here."
+    },
+    "stats": {
+      "students": "Students",
+      "studentsNote": "Growth profiles created",
+      "teachers": "Teachers",
+      "teachersNote": "Teaching workspace access",
+      "documents": "Materials",
+      "documentsNote": "Knowledge base files",
+      "questions": "AI questions",
+      "questionsNote": "Recorded RAG requests",
+      "emptyRetrievals": "Empty retrievals",
+      "emptyRetrievalsNote": "Check materials and filters"
+    },
+    "fields": {
+      "question": "Question",
+      "student": "Student",
+      "subject": "Subject",
+      "retrieval": "Selected/candidates",
+      "duration": "Duration",
+      "role": "Role",
+      "displayName": "Display name",
+      "username": "Username",
+      "password": "Initial password",
+      "candidates": "Candidate chunks"
+    },
+    "roles": {
+      "student": "Student",
+      "teacher": "Teacher",
+      "admin": "Administrator"
+    },
+    "users": {
+      "eyebrow": "Accounts and access",
+      "title": "Manage system accounts",
+      "description": "Create teacher and administrator accounts and review access roles.",
+      "add": "Create account",
+      "addHint": "Student accounts continue to use student registration.",
+      "create": "Create account",
+      "created": "Account created",
+      "accounts": "Current accounts",
+      "count": "{{count}} accounts"
+    },
+    "knowledge": {
+      "eyebrow": "Materials and indexing",
+      "title": "Inspect knowledge processing",
+      "description": "Review document status, chunks, and embedding models, or queue reindexing.",
+      "library": "Material index",
+      "count": "{{count}} materials",
+      "chunkCount": "{{count}} chunks",
+      "inspect": "Inspect chunks",
+      "body": "Body text",
+      "queued": "Indexing task queued"
+    },
+    "observability": {
+      "eyebrow": "RAG debugging",
+      "title": "Inspect retrieval for every answer",
+      "description": "Compare semantic, keyword, and final scores and see what entered model context.",
+      "empty": "No matching traces yet.",
+      "selected": "Sent to model",
+      "noChunks": "No chunks were retrieved for this question."
+    },
+    "settings": {
+      "eyebrow": "System settings",
+      "title": "Review service configuration",
+      "description": "This page shows configuration status only. Secrets are never sent to the browser.",
+      "ai": "AI features",
+      "aiHint": "Models and business feature status",
+      "tutor": "AI subject tutor",
+      "report": "Personal reports",
+      "review": "Credential review",
+      "chatModel": "Chat model",
+      "embedding": "Embedding model",
+      "device": "Compute device",
+      "langfuseHint": "AI tracing and evaluation platform",
+      "status": "Tracing status",
+      "credentials": "Credentials",
+      "environment": "Environment",
+      "queue": "Background jobs",
+      "queueHint": "Celery and Redis configuration",
+      "timezone": "Timezone",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    }
   },
   "dashboard": {
     "greeting": "Good morning, Teacher Wang",

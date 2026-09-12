@@ -1,4 +1,5 @@
 import json
+import os
 from werkzeug.security import generate_password_hash
 
 from database import get_db, init_db
@@ -17,8 +18,17 @@ STUDENTS = [
 def seed():
     init_db()
     with get_db() as db:
+        db.execute(
+            """INSERT INTO admin_users(username,password_hash,display_name)
+               VALUES(?,?,?) ON CONFLICT(username) DO NOTHING""",
+            (
+                os.getenv("ADMIN_USERNAME", "admin"),
+                generate_password_hash(os.getenv("ADMIN_PASSWORD", "admin123")),
+                os.getenv("ADMIN_DISPLAY_NAME", "系统管理员"),
+            ),
+        )
         if db.execute("SELECT COUNT(*) FROM users").fetchone()[0]:
-            print("已有数据，跳过初始化。")
+            print("已有数据，已确认管理员账号。")
             return
         db.execute("INSERT INTO users(username,password_hash,role,display_name) VALUES(?,?,?,?)",
                    ("teacher", generate_password_hash("teacher123"), "teacher", "王老师"))
@@ -32,7 +42,7 @@ def seed():
                        (student.lastrowid, json.dumps(tags, ensure_ascii=False), description))
             db.executemany("INSERT INTO grades(student_id,year,semester,chinese,math,english,politics) VALUES(?,?,?,?,?,?,?)",
                            [(student.lastrowid, *row) for row in grades])
-    print("演示数据已创建。教师：teacher / teacher123；学生：student1 / student123")
+    print("演示数据已创建。管理员：admin / admin123；教师：teacher / teacher123；学生：student1 / student123")
 
 
 if __name__ == "__main__":

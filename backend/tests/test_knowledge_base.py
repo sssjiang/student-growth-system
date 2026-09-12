@@ -58,6 +58,8 @@ class KnowledgeBaseTest(unittest.TestCase):
         ]
         result = retrieve_chunks("函数单调性", rows)
         self.assertEqual(result[0]["document_id"], 1)
+        self.assertGreater(result[0]["keyword_score"], 0)
+        self.assertEqual(result[0]["semantic_score"], 0)
 
     @patch("services.tutor._model_config", return_value={"api_key": "", "base_url": "", "model": ""})
     def test_tutor_has_grounded_local_fallback(self, _):

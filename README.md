@@ -96,14 +96,37 @@ npm run dev
 
 | 角色 | 用户名 | 密码 |
 | --- | --- | --- |
+| 管理员 | `admin` | `admin123` |
 | 教师 | `teacher` | `teacher123` |
 | 学生 | `student1` | `student123` |
+
+首次启动会自动创建管理员账号。部署前请在 `.env` 中修改
+`ADMIN_USERNAME`、`ADMIN_PASSWORD` 和 `ADMIN_DISPLAY_NAME`。
 
 也可以运行 `docker compose up --build`，再访问 `http://localhost:5173`。首次使用 Docker 后需初始化演示数据：
 
 ```bash
 docker compose exec backend python seed.py
 ```
+
+## AI 可观测性
+
+管理员后台会在本地数据库记录每次辅导问答的候选数量、Top 20 召回切片、
+语义得分、关键词得分、最终得分和最终送入模型的 Top 5。该功能不依赖外部服务。
+
+如需在 Langfuse 查看 LangGraph 节点、检索、Prompt、模型响应、Token 和耗时，
+在 `.env` 中配置：
+
+```bash
+LANGFUSE_ENABLED=true
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_BASE_URL=https://cloud.langfuse.com
+LANGFUSE_TRACING_ENVIRONMENT=development
+```
+
+使用自托管 Langfuse 时，将 `LANGFUSE_BASE_URL` 改为自托管服务地址即可。
+管理员页面只显示配置状态，不会把 Secret Key 返回到浏览器。
 
 ## 成绩 CSV 格式
 

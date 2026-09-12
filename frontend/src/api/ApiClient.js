@@ -37,6 +37,9 @@ const ERROR_KEYS = {
   会话学科不能修改: 'conversationSubjectLocked',
   请填写你的问题: 'questionRequired',
   '教材仅支持 PDF、DOCX、图片和 TXT 文件': 'knowledgeFileType',
+  '请填写账号、姓名并选择账号角色': 'adminAccountRequired',
+  用户名已存在: 'usernameExists',
+  调试记录不存在: 'traceMissing',
 };
 
 class ApiClient {

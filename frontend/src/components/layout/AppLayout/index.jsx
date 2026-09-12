@@ -1,4 +1,5 @@
 import {
+  Activity,
   BarChart3,
   BadgeCheck,
   ClipboardList,
@@ -21,6 +22,25 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, LanguageSwitcher, Logo } from '@/components';
 
 const NAV_ITEMS = {
+  admin: [
+    {
+      label: 'nav.adminDashboard',
+      path: '/admin/dashboard',
+      icon: LayoutDashboard,
+    },
+    { label: 'nav.userManagement', path: '/admin/users', icon: UsersRound },
+    {
+      label: 'nav.indexManagement',
+      path: '/admin/knowledge',
+      icon: LibraryBig,
+    },
+    {
+      label: 'nav.aiObservability',
+      path: '/admin/observability',
+      icon: Activity,
+    },
+    { label: 'nav.systemSettings', path: '/admin/settings', icon: Settings },
+  ],
   teacher: [
     {
       label: 'nav.dashboard',
@@ -85,13 +105,7 @@ function AppLayout({ children }) {
             <X />
           </button>
         </div>
-        <div className="role-label">
-          {t(
-            user.role === 'teacher'
-              ? 'nav.teacherWorkspace'
-              : 'nav.studentWorkspace'
-          )}
-        </div>
+        <div className="role-label">{t(`nav.${user.role}Workspace`)}</div>
         <nav>
           {items.map(({ icon: Icon, label, path }) => {
             const active = pathname.startsWith(path);
@@ -134,13 +148,7 @@ function AppLayout({ children }) {
             <Menu />
           </button>
           <div className="topbar-context">
-            <span>
-              {t(
-                user.role === 'teacher'
-                  ? 'nav.teacherCenter'
-                  : 'nav.studentCenter'
-              )}
-            </span>
+            <span>{t(`nav.${user.role}Center`)}</span>
             <b>{currentItem && t(currentItem.label)}</b>
           </div>
           <LanguageSwitcher compact />
@@ -148,13 +156,7 @@ function AppLayout({ children }) {
             <Avatar name={user.name} size="sm" />
             <span>
               <b>{user.name}</b>
-              <small>
-                {t(
-                  user.role === 'teacher'
-                    ? 'nav.teacherRole'
-                    : 'nav.studentRole'
-                )}
-              </small>
+              <small>{t(`nav.${user.role}Role`)}</small>
             </span>
           </div>
         </div>

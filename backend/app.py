@@ -2,6 +2,8 @@ import csv
 import io
 import json
 import os
+import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
@@ -25,6 +27,7 @@ from services.credential_queue import (
     enqueue_knowledge_index,
 )
 from services.knowledge_base import SUBJECTS, retrieve_chunks
+from services.observability import langfuse_settings, trace_tutor_request
 from services.semantic_search import embedding_model_name, encode_interest, search_students
 from services.tutor import generate_tutor_reply
 
@@ -53,6 +56,16 @@ def create_app(test_config=None):
     Path(app.config["UPLOAD_FOLDER"]).mkdir(parents=True, exist_ok=True)
     storage = LocalFileStorage(app.config["UPLOAD_FOLDER"])
     init_db()
+    with get_db() as db:
+        db.execute(
+            """INSERT INTO admin_users(username,password_hash,display_name)
+               VALUES(?,?,?) ON CONFLICT(username) DO NOTHING""",
+            (
+                os.getenv("ADMIN_USERNAME", "admin"),
+                generate_password_hash(os.getenv("ADMIN_PASSWORD", "admin123")),
+                os.getenv("ADMIN_DISPLAY_NAME", "系统管理员"),
+            ),
+        )
 
     def token_required(*roles):
         def decorator(view):
@@ -70,10 +83,17 @@ def create_app(test_config=None):
                 except jwt.InvalidTokenError:
                     return error("无效的登录凭证", 401)
                 with get_db() as db:
-                    user = db.execute(
-                        "SELECT id, username, role, display_name FROM users WHERE id = ?",
-                        (payload.get("sub"),),
-                    ).fetchone()
+                    if payload.get("role") == "admin":
+                        user = db.execute(
+                            """SELECT id,username,'admin' role,display_name
+                               FROM admin_users WHERE id=?""",
+                            (payload.get("sub"),),
+                        ).fetchone()
+                    else:
+                        user = db.execute(
+                            "SELECT id, username, role, display_name FROM users WHERE id = ?",
+                            (payload.get("sub"),),
+                        ).fetchone()
                 if not user:
                     return error("用户不存在", 401)
                 g.user = dict(user)
@@ -136,6 +156,14 @@ def create_app(test_config=None):
             user = db.execute(
                 "SELECT * FROM users WHERE username = ?", (data.get("username", ""),)
             ).fetchone()
+            if not user:
+                admin = db.execute(
+                    "SELECT * FROM admin_users WHERE username=?",
+                    (data.get("username", ""),),
+                ).fetchone()
+                if admin:
+                    user = dict(admin)
+                    user["role"] = "admin"
         if not user or not check_password_hash(user["password_hash"], data.get("password", "")):
             return error("用户名或密码错误", 401)
         token = jwt.encode(
@@ -160,7 +188,7 @@ def create_app(test_config=None):
         )
 
     @app.get("/api/me")
-    @token_required("student", "teacher")
+    @token_required("student", "teacher", "admin")
     def me():
         return jsonify({"user": g.user})
 
@@ -318,6 +346,197 @@ def create_app(test_config=None):
         with get_db() as db:
             files = credential_rows(db, "WHERE sf.student_id=?", (row["student_id"],))
         return jsonify({"message": "凭证已重新提交", "files": files})
+
+    @app.get("/api/admin/dashboard")
+    @token_required("admin")
+    def admin_dashboard():
+        with get_db() as db:
+            stats = {
+                "students": db.execute("SELECT COUNT(*) FROM students").fetchone()[0],
+                "teachers": db.execute(
+                    "SELECT COUNT(*) FROM users WHERE role='teacher'"
+                ).fetchone()[0],
+                "documents": db.execute(
+                    "SELECT COUNT(*) FROM knowledge_documents"
+                ).fetchone()[0],
+                "failed_documents": db.execute(
+                    "SELECT COUNT(*) FROM knowledge_documents WHERE status='failed'"
+                ).fetchone()[0],
+                "questions": db.execute(
+                    "SELECT COUNT(*) FROM rag_traces"
+                ).fetchone()[0],
+                "empty_retrievals": db.execute(
+                    "SELECT COUNT(*) FROM rag_traces WHERE selected_count=0"
+                ).fetchone()[0],
+            }
+            recent = admin_trace_rows(db, limit=6)
+        return jsonify({"stats": stats, "recent_traces": recent})
+
+    @app.route("/api/admin/users", methods=["GET", "POST"])
+    @token_required("admin")
+    def admin_users():
+        if request.method == "GET":
+            with get_db() as db:
+                users = [
+                    dict(row)
+                    for row in db.execute(
+                        """SELECT id,username,role,display_name,created_at
+                           FROM users ORDER BY created_at DESC,id DESC"""
+                    )
+                ]
+                admins = [
+                    {
+                        **dict(row),
+                        "role": "admin",
+                    }
+                    for row in db.execute(
+                        """SELECT id,username,display_name,created_at
+                           FROM admin_users ORDER BY created_at DESC,id DESC"""
+                    )
+                ]
+            return jsonify({"users": admins + users})
+
+        data = request.get_json(silent=True) or {}
+        username = str(data.get("username", "")).strip()[:80]
+        password = str(data.get("password", ""))
+        display_name = str(data.get("display_name", "")).strip()[:80]
+        role = str(data.get("role", "")).strip()
+        if not username or not display_name or role not in {"admin", "teacher"}:
+            return error("请填写账号、姓名并选择账号角色")
+        if len(password) < 6:
+            return error("密码至少需要 6 位")
+        try:
+            with get_db() as db:
+                if db.execute(
+                    "SELECT 1 FROM users WHERE username=?", (username,)
+                ).fetchone() or db.execute(
+                    "SELECT 1 FROM admin_users WHERE username=?", (username,)
+                ).fetchone():
+                    return error("用户名已存在", 409)
+                if role == "admin":
+                    cursor = db.execute(
+                        """INSERT INTO admin_users(username,password_hash,display_name)
+                           VALUES(?,?,?)""",
+                        (username, generate_password_hash(password), display_name),
+                    )
+                else:
+                    cursor = db.execute(
+                        """INSERT INTO users(username,password_hash,role,display_name)
+                           VALUES(?,?,'teacher',?)""",
+                        (username, generate_password_hash(password), display_name),
+                    )
+        except Exception as exc:
+            if "UNIQUE" in str(exc):
+                return error("用户名已存在", 409)
+            raise
+        return jsonify(
+            {
+                "user": {
+                    "id": cursor.lastrowid,
+                    "username": username,
+                    "display_name": display_name,
+                    "role": role,
+                }
+            }
+        ), 201
+
+    @app.get("/api/admin/knowledge")
+    @token_required("admin")
+    def admin_knowledge():
+        with get_db() as db:
+            documents = knowledge_document_rows(db)
+        return jsonify({"documents": documents})
+
+    @app.get("/api/admin/knowledge/<int:document_id>/chunks")
+    @token_required("admin")
+    def admin_knowledge_chunks(document_id):
+        requested_limit = request.args.get("limit", 50, type=int)
+        limit = max(1, min(requested_limit if requested_limit is not None else 50, 200))
+        with get_db() as db:
+            document = db.execute(
+                "SELECT id,title,subject,grade_level,status FROM knowledge_documents WHERE id=?",
+                (document_id,),
+            ).fetchone()
+            if not document:
+                return error("教材不存在", 404)
+            chunks = [
+                dict(row)
+                for row in db.execute(
+                    """SELECT id,position,heading,content,embedding_model,created_at
+                       FROM knowledge_chunks WHERE document_id=?
+                       ORDER BY position LIMIT ?""",
+                    (document_id, limit),
+                )
+            ]
+        return jsonify({"document": dict(document), "chunks": chunks})
+
+    @app.post("/api/admin/knowledge/<int:document_id>/reindex")
+    @token_required("admin")
+    def admin_reindex_knowledge(document_id):
+        with get_db() as db:
+            if not db.execute(
+                "SELECT 1 FROM knowledge_documents WHERE id=?", (document_id,)
+            ).fetchone():
+                return error("教材不存在", 404)
+        enqueue_knowledge_index(document_id)
+        return jsonify({"message": "索引任务已提交"}), 202
+
+    @app.get("/api/admin/rag-traces")
+    @token_required("admin")
+    def admin_rag_traces():
+        requested_limit = request.args.get("limit", 50, type=int)
+        limit = max(1, min(requested_limit if requested_limit is not None else 50, 200))
+        subject = request.args.get("subject", "")
+        where, params = "", []
+        if subject in SUBJECTS:
+            where = "WHERE rt.subject=?"
+            params.append(subject)
+        with get_db() as db:
+            traces = admin_trace_rows(db, where, (*params,), limit)
+        return jsonify({"traces": traces})
+
+    @app.get("/api/admin/rag-traces/<trace_id>")
+    @token_required("admin")
+    def admin_rag_trace(trace_id):
+        with get_db() as db:
+            rows = admin_trace_rows(db, "WHERE rt.id=?", (trace_id,), 1)
+            if not rows:
+                return error("调试记录不存在", 404)
+            chunks = [
+                dict(row)
+                for row in db.execute(
+                    """SELECT chunk_id,rank,semantic_score,keyword_score,
+                              final_score,selected,document_title,heading,content_snapshot
+                       FROM rag_trace_chunks WHERE trace_id=? ORDER BY rank""",
+                    (trace_id,),
+                )
+            ]
+        return jsonify({"trace": rows[0], "chunks": chunks})
+
+    @app.get("/api/admin/settings")
+    @token_required("admin")
+    def admin_settings():
+        tracing = langfuse_settings()
+        return jsonify(
+            {
+                "ai": {
+                    "report_enabled": env_enabled("AI_REPORT_ENABLED", True),
+                    "credential_review_enabled": env_enabled(
+                        "AI_CREDENTIAL_REVIEW_ENABLED", True
+                    ),
+                    "tutor_enabled": env_enabled("AI_TUTOR_ENABLED", True),
+                    "chat_model": os.getenv("OPENAI_MODEL")
+                    or os.getenv("LongCat_MODEL", ""),
+                    "embedding_model": embedding_model_name(),
+                    "embedding_device": os.getenv("EMBEDDING_DEVICE", "cpu"),
+                },
+                "langfuse": tracing,
+                "queue": {
+                    "broker_configured": bool(os.getenv("CELERY_BROKER_URL")),
+                    "timezone": os.getenv("CELERY_TIMEZONE", "Asia/Shanghai"),
+                },
+            }
+        )
 
     @app.get("/api/teacher/dashboard")
     @token_required("teacher")
@@ -696,10 +915,56 @@ def create_app(test_config=None):
             )
             grades = grade_rows(db, student["id"])
 
-        chunks = retrieve_chunks(question, candidates)
-        answer, citations, generated_by = generate_tutor_reply(
-            dict(student), subject, question, chunks, history, grades
-        )
+        started_at = time.perf_counter()
+        trace_id = uuid.uuid4().hex
+        with trace_tutor_request(
+            trace_id,
+            student["id"],
+            conversation_id,
+            subject,
+            question,
+        ) as trace:
+            with trace.retrieval(question, len(candidates)) as retrieval:
+                ranked_chunks = retrieve_chunks(question, candidates, limit=20)
+                chunks = ranked_chunks[:5]
+                if retrieval:
+                    try:
+                        retrieval.update(
+                            output=[
+                                {
+                                    "rank": index,
+                                    "chunk_id": chunk.get("id"),
+                                    "title": chunk.get("title", ""),
+                                    "heading": chunk.get("heading", ""),
+                                    "semantic_score": chunk.get("semantic_score", 0),
+                                    "keyword_score": chunk.get("keyword_score", 0),
+                                    "final_score": chunk.get("score", 0),
+                                    "selected": index <= 5,
+                                    "content": chunk.get("content", "")[:2000],
+                                }
+                                for index, chunk in enumerate(ranked_chunks, 1)
+                            ]
+                        )
+                    except Exception:
+                        pass
+            answer, citations, generated_by = generate_tutor_reply(
+                dict(student),
+                subject,
+                question,
+                chunks,
+                history,
+                grades,
+                callbacks=trace.callbacks,
+            )
+            trace.update(
+                output={
+                    "answer": answer,
+                    "generated_by": generated_by,
+                    "selected_count": len(chunks),
+                }
+            )
+            langfuse_trace_id = trace.trace_id
+        duration_ms = round((time.perf_counter() - started_at) * 1000)
         with get_db() as db:
             db.execute(
                 "INSERT INTO tutor_messages(conversation_id,role,content) VALUES(?,'user',?)",
@@ -714,6 +979,50 @@ def create_app(test_config=None):
                 """UPDATE tutor_conversations SET updated_at=CURRENT_TIMESTAMP
                    WHERE id=?""",
                 (conversation_id,),
+            )
+            db.execute(
+                """INSERT INTO rag_traces(
+                   id,conversation_id,message_id,student_id,subject,question,
+                   candidate_count,retrieved_count,selected_count,generated_by,
+                   model_name,duration_ms,status,langfuse_trace_id
+                   ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    trace_id,
+                    conversation_id,
+                    message.lastrowid,
+                    student["id"],
+                    subject,
+                    question,
+                    len(candidates),
+                    len(ranked_chunks),
+                    len(chunks),
+                    generated_by,
+                    os.getenv("OPENAI_MODEL") or os.getenv("LongCat_MODEL", ""),
+                    duration_ms,
+                    "completed",
+                    langfuse_trace_id,
+                ),
+            )
+            db.executemany(
+                """INSERT INTO rag_trace_chunks(
+                   trace_id,chunk_id,rank,semantic_score,keyword_score,final_score,
+                   selected,document_title,heading,content_snapshot
+                   ) VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                [
+                    (
+                        trace_id,
+                        chunk.get("id"),
+                        index,
+                        chunk.get("semantic_score", 0),
+                        chunk.get("keyword_score", 0),
+                        chunk.get("score", 0),
+                        1 if index <= 5 else 0,
+                        chunk.get("title", ""),
+                        chunk.get("heading", ""),
+                        chunk.get("content", "")[:4000],
+                    )
+                    for index, chunk in enumerate(ranked_chunks, 1)
+                ],
             )
         return jsonify(
             {
@@ -787,6 +1096,25 @@ def create_app(test_config=None):
 
 def error(message, status=400):
     return jsonify({"error": message}), status
+
+
+def env_enabled(name, default=False):
+    fallback = "true" if default else "false"
+    return os.getenv(name, fallback).lower() not in {"0", "false", "no"}
+
+
+def admin_trace_rows(db, where="", params=(), limit=50):
+    return [
+        dict(row)
+        for row in db.execute(
+            f"""SELECT rt.*,s.name student_name,s.student_no,tc.title conversation_title
+                FROM rag_traces rt
+                LEFT JOIN students s ON s.id=rt.student_id
+                LEFT JOIN tutor_conversations tc ON tc.id=rt.conversation_id
+                {where} ORDER BY rt.created_at DESC LIMIT ?""",
+            (*params, limit),
+        )
+    ]
 
 
 def parse_credential_metadata(form):

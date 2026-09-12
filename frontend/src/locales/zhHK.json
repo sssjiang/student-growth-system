@@ -59,16 +59,27 @@
     "conversationMissing": "搵唔到輔導對話",
     "conversationSubjectLocked": "同一個對話入面唔可以更改學科",
     "questionRequired": "請填寫你嘅問題",
-    "knowledgeFileType": "教材只支援 PDF、DOCX、圖片同 TXT 檔案"
+    "knowledgeFileType": "教材只支援 PDF、DOCX、圖片同 TXT 檔案",
+    "adminAccountRequired": "請填寫帳號、姓名同選擇帳號角色",
+    "usernameExists": "用戶名稱已存在",
+    "traceMissing": "搵唔到調試紀錄"
   },
   "brand": { "mark": "知", "name": "知行", "subtitle": "學生成長中心" },
   "nav": {
     "teacherWorkspace": "教師工作空間",
     "studentWorkspace": "學生成長空間",
+    "adminWorkspace": "系統管理空間",
     "teacherCenter": "教學管理中心",
     "studentCenter": "個人成長中心",
+    "adminCenter": "系統管理中心",
     "teacherRole": "班主任 · 教師",
     "studentRole": "在校學生",
+    "adminRole": "系統管理員",
+    "adminDashboard": "管理概覽",
+    "userManagement": "帳號管理",
+    "indexManagement": "教材同索引",
+    "aiObservability": "AI 可觀測性",
+    "systemSettings": "系統設定",
     "dashboard": "工作台",
     "smartMatch": "智能配對",
     "students": "學生檔案",
@@ -112,6 +123,7 @@
     "quickDemo": "快速體驗",
     "teacherAccount": "教師帳戶",
     "studentAccount": "學生帳戶",
+    "adminAccount": "管理員帳戶",
     "copyright": "© 2026 知行學生成長中心 · 令每一次進步都被看見"
   },
   "profile": {
@@ -459,6 +471,97 @@
     "exportSuccess": "PDF 報告已下載",
     "exportFailed": "PDF 生成失敗，請稍後再試",
     "pdfFilename": "{{name}}成長報告"
+  },
+  "admin": {
+    "dashboard": {
+      "eyebrow": "系統管理",
+      "title": "學校運作同 AI 服務概覽",
+      "description": "集中查看帳號、教材索引同輔導問答嘅運作狀態。",
+      "recent": "最近 AI 問答",
+      "recentDescription": "快速搵出冇召回、回應慢同答案異常。",
+      "noTraces": "暫時未有 RAG 調試紀錄，學生提出新問題後會顯示喺呢度。"
+    },
+    "stats": {
+      "students": "學生帳號",
+      "studentsNote": "已建立成長檔案",
+      "teachers": "教師帳號",
+      "teachersNote": "可以使用教學工作台",
+      "documents": "教材檔案",
+      "documentsNote": "知識庫資料總數",
+      "questions": "AI 問答",
+      "questionsNote": "已記錄嘅 RAG 請求",
+      "emptyRetrievals": "冇召回問答",
+      "emptyRetrievalsNote": "需要檢查教材同篩選條件"
+    },
+    "fields": {
+      "question": "問題",
+      "student": "學生",
+      "subject": "學科",
+      "retrieval": "選中/候選",
+      "duration": "耗時",
+      "role": "帳號角色",
+      "displayName": "顯示名稱",
+      "username": "用戶名稱",
+      "password": "初始密碼",
+      "candidates": "候選切片"
+    },
+    "roles": {
+      "student": "學生",
+      "teacher": "教師",
+      "admin": "管理員"
+    },
+    "users": {
+      "eyebrow": "帳號同權限",
+      "title": "管理系統存取帳號",
+      "description": "建立教師同管理員帳號，並核對目前角色權限。",
+      "add": "建立帳號",
+      "addHint": "學生帳號繼續經學生註冊流程建立。",
+      "create": "建立帳號",
+      "created": "帳號已建立",
+      "accounts": "現有帳號",
+      "count": "共 {{count}} 個帳號"
+    },
+    "knowledge": {
+      "eyebrow": "教材同索引",
+      "title": "檢查知識庫處理結果",
+      "description": "查看教材狀態、切片內容同 embedding 模型，亦可以重新提交索引。",
+      "library": "教材索引",
+      "count": "共 {{count}} 份教材",
+      "chunkCount": "{{count}} 個切片",
+      "inspect": "查看切片",
+      "body": "正文",
+      "queued": "索引任務已提交"
+    },
+    "observability": {
+      "eyebrow": "RAG 調試",
+      "title": "查看每次問答嘅召回過程",
+      "description": "比較語意、關鍵字同最終分數，確認邊啲片段真正進入模型上下文。",
+      "empty": "暫時未有符合條件嘅調試紀錄。",
+      "selected": "已送入模型",
+      "noChunks": "今次問答冇召回任何片段。"
+    },
+    "settings": {
+      "eyebrow": "系統設定",
+      "title": "檢查服務配置",
+      "description": "呢個頁面只顯示配置狀態，密鑰唔會傳去瀏覽器。",
+      "ai": "AI 功能",
+      "aiHint": "模型同業務功能運作狀態",
+      "tutor": "AI 學科輔導",
+      "report": "個人化報告",
+      "review": "憑證輔助評審",
+      "chatModel": "對話模型",
+      "embedding": "Embedding 模型",
+      "device": "計算裝置",
+      "langfuseHint": "AI Trace 同評測平台",
+      "status": "追蹤狀態",
+      "credentials": "存取憑證",
+      "environment": "運作環境",
+      "queue": "背景任務",
+      "queueHint": "Celery 同 Redis 連接配置",
+      "timezone": "時區",
+      "enabled": "已啟用",
+      "disabled": "未啟用"
+    }
   },
   "dashboard": {
     "greeting": "早晨，王老師",

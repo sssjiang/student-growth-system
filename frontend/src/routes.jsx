@@ -12,9 +12,34 @@ import {
   TeacherDashboard,
 } from '@/pages/teacher';
 import { FilesPage, GradesPage, ProfilePage, TutorPage } from '@/pages/student';
+import {
+  AdminDashboard,
+  AdminKnowledgePage,
+  AdminObservabilityPage,
+  AdminSettingsPage,
+  AdminUsersPage,
+} from '@/pages/admin';
 
 const routes = [
   { path: '/sign-in', element: <LoginPage /> },
+  {
+    path: '/admin',
+    element: (
+      <ProtectedRoute roles={['admin']}>
+        <AppLayout>
+          <Outlet />
+        </AppLayout>
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'users', element: <AdminUsersPage /> },
+      { path: 'knowledge', element: <AdminKnowledgePage /> },
+      { path: 'observability', element: <AdminObservabilityPage /> },
+      { path: 'settings', element: <AdminSettingsPage /> },
+    ],
+  },
   {
     path: '/teacher',
     element: (

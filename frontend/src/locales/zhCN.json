@@ -59,16 +59,27 @@
     "conversationMissing": "辅导会话不存在",
     "conversationSubjectLocked": "同一个会话中不能修改学科",
     "questionRequired": "请填写你的问题",
-    "knowledgeFileType": "教材仅支持 PDF、DOCX、图片和 TXT 文件"
+    "knowledgeFileType": "教材仅支持 PDF、DOCX、图片和 TXT 文件",
+    "adminAccountRequired": "请填写账号、姓名并选择账号角色",
+    "usernameExists": "用户名已存在",
+    "traceMissing": "调试记录不存在"
   },
   "brand": { "mark": "知", "name": "知行", "subtitle": "学生成长中心" },
   "nav": {
     "teacherWorkspace": "教师工作空间",
     "studentWorkspace": "学生成长空间",
+    "adminWorkspace": "系统管理空间",
     "teacherCenter": "教学管理中心",
     "studentCenter": "个人成长中心",
+    "adminCenter": "系统管理中心",
     "teacherRole": "班主任 · 教师",
     "studentRole": "在校学生",
+    "adminRole": "系统管理员",
+    "adminDashboard": "管理概览",
+    "userManagement": "账号管理",
+    "indexManagement": "教材与索引",
+    "aiObservability": "AI 可观测性",
+    "systemSettings": "系统设置",
     "dashboard": "工作台",
     "smartMatch": "智能匹配",
     "students": "学生档案",
@@ -112,6 +123,7 @@
     "quickDemo": "快速体验",
     "teacherAccount": "教师账号",
     "studentAccount": "学生账号",
+    "adminAccount": "管理员账号",
     "copyright": "© 2026 知行学生成长中心 · 让每一次进步被看见"
   },
   "profile": {
@@ -459,6 +471,97 @@
     "exportSuccess": "PDF 报告已下载",
     "exportFailed": "PDF 生成失败，请稍后重试",
     "pdfFilename": "{{name}}成长报告"
+  },
+  "admin": {
+    "dashboard": {
+      "eyebrow": "系统管理",
+      "title": "学校运行与 AI 服务概览",
+      "description": "集中查看账号、教材索引和辅导问答的运行状态。",
+      "recent": "最近 AI 问答",
+      "recentDescription": "快速定位无召回、响应缓慢和回答异常。",
+      "noTraces": "还没有 RAG 调试记录，学生发起新问答后会显示在这里。"
+    },
+    "stats": {
+      "students": "学生账号",
+      "studentsNote": "已建立成长档案",
+      "teachers": "教师账号",
+      "teachersNote": "可使用教学工作台",
+      "documents": "教材文件",
+      "documentsNote": "知识库资料总数",
+      "questions": "AI 问答",
+      "questionsNote": "已记录的 RAG 请求",
+      "emptyRetrievals": "无召回问答",
+      "emptyRetrievalsNote": "需要检查教材与过滤条件"
+    },
+    "fields": {
+      "question": "问题",
+      "student": "学生",
+      "subject": "学科",
+      "retrieval": "选中/候选",
+      "duration": "耗时",
+      "role": "账号角色",
+      "displayName": "显示名称",
+      "username": "用户名",
+      "password": "初始密码",
+      "candidates": "候选切片"
+    },
+    "roles": {
+      "student": "学生",
+      "teacher": "教师",
+      "admin": "管理员"
+    },
+    "users": {
+      "eyebrow": "账号与权限",
+      "title": "管理系统访问账号",
+      "description": "创建教师和管理员账号，并核对当前角色权限。",
+      "add": "创建账号",
+      "addHint": "学生账号继续通过学生注册流程建立。",
+      "create": "创建账号",
+      "created": "账号已创建",
+      "accounts": "现有账号",
+      "count": "共 {{count}} 个账号"
+    },
+    "knowledge": {
+      "eyebrow": "教材与索引",
+      "title": "检查知识库处理结果",
+      "description": "查看教材状态、切片内容和 embedding 模型，并可重新提交索引。",
+      "library": "教材索引",
+      "count": "共 {{count}} 份教材",
+      "chunkCount": "{{count}} 个切片",
+      "inspect": "查看切片",
+      "body": "正文",
+      "queued": "索引任务已提交"
+    },
+    "observability": {
+      "eyebrow": "RAG 调试",
+      "title": "查看每次问答的召回过程",
+      "description": "比较语义、关键词和最终得分，确认哪些片段真正进入模型上下文。",
+      "empty": "还没有符合条件的调试记录。",
+      "selected": "已送入模型",
+      "noChunks": "这次问答没有召回任何片段。"
+    },
+    "settings": {
+      "eyebrow": "系统设置",
+      "title": "检查服务配置",
+      "description": "此页面只显示配置状态，密钥不会返回到浏览器。",
+      "ai": "AI 功能",
+      "aiHint": "模型与业务功能运行状态",
+      "tutor": "AI 学科辅导",
+      "report": "个性化报告",
+      "review": "凭证辅助评审",
+      "chatModel": "对话模型",
+      "embedding": "Embedding 模型",
+      "device": "计算设备",
+      "langfuseHint": "AI Trace 和评测平台",
+      "status": "追踪状态",
+      "credentials": "访问凭证",
+      "environment": "运行环境",
+      "queue": "后台任务",
+      "queueHint": "Celery 与 Redis 连接配置",
+      "timezone": "时区",
+      "enabled": "已启用",
+      "disabled": "未启用"
+    }
   },
   "dashboard": {
     "greeting": "上午好，王老师",

@@ -9,6 +9,14 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS admin_users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS students (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER UNIQUE,
@@ -158,6 +166,43 @@ CREATE TABLE IF NOT EXISTS tutor_messages (
   FOREIGN KEY(conversation_id) REFERENCES tutor_conversations(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS rag_traces (
+  id TEXT PRIMARY KEY,
+  conversation_id INTEGER,
+  message_id INTEGER,
+  student_id INTEGER,
+  subject TEXT NOT NULL,
+  question TEXT NOT NULL,
+  candidate_count INTEGER NOT NULL DEFAULT 0,
+  retrieved_count INTEGER NOT NULL DEFAULT 0,
+  selected_count INTEGER NOT NULL DEFAULT 0,
+  generated_by TEXT NOT NULL DEFAULT '',
+  model_name TEXT NOT NULL DEFAULT '',
+  duration_ms INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'completed',
+  error_message TEXT NOT NULL DEFAULT '',
+  langfuse_trace_id TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(conversation_id) REFERENCES tutor_conversations(id) ON DELETE SET NULL,
+  FOREIGN KEY(message_id) REFERENCES tutor_messages(id) ON DELETE SET NULL,
+  FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS rag_trace_chunks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  trace_id TEXT NOT NULL,
+  chunk_id INTEGER,
+  rank INTEGER NOT NULL,
+  semantic_score REAL NOT NULL DEFAULT 0,
+  keyword_score REAL NOT NULL DEFAULT 0,
+  final_score REAL NOT NULL DEFAULT 0,
+  selected INTEGER NOT NULL DEFAULT 0,
+  document_title TEXT NOT NULL DEFAULT '',
+  heading TEXT NOT NULL DEFAULT '',
+  content_snapshot TEXT NOT NULL DEFAULT '',
+  FOREIGN KEY(trace_id) REFERENCES rag_traces(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_grades_student_year ON grades(student_id, year, semester);
 CREATE INDEX IF NOT EXISTS idx_students_class ON students(grade, class_name);
 CREATE INDEX IF NOT EXISTS idx_credential_ai_reviews_status
@@ -170,3 +215,7 @@ CREATE INDEX IF NOT EXISTS idx_tutor_conversations_student
   ON tutor_conversations(student_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tutor_messages_conversation
   ON tutor_messages(conversation_id, id);
+CREATE INDEX IF NOT EXISTS idx_rag_traces_created
+  ON rag_traces(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rag_trace_chunks_trace
+  ON rag_trace_chunks(trace_id, rank);

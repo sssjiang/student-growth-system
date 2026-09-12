@@ -127,6 +127,8 @@ def retrieve_chunks(query, rows, limit=5):
             if vector
             else 0.0
         )
+        item["semantic_score"] = round(max(semantic, 0), 4)
+        item["keyword_score"] = round(keyword, 4)
         item["score"] = round(0.65 * max(semantic, 0) + 0.35 * keyword, 4)
         item.pop("embedding", None)
         item.pop("embedding_model", None)

@@ -4,6 +4,8 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 from openai import OpenAI
 
+from services.observability import traced_openai_class
+
 
 SUBJECT_LABELS = {
     "chinese": "语文",
@@ -84,7 +86,7 @@ def _generate_node(state: TutorState):
     )
     latest_grade = state.get("grades", [])[-1] if state.get("grades") else None
     try:
-        response = OpenAI(**options).chat.completions.create(
+        response = traced_openai_class(OpenAI)(**options).chat.completions.create(
             model=config["model"],
             temperature=0.2,
             messages=[
@@ -134,7 +136,7 @@ def _build_graph():
 TUTOR_GRAPH = _build_graph()
 
 
-def generate_tutor_reply(student, subject, question, chunks, history, grades):
+def generate_tutor_reply(student, subject, question, chunks, history, grades, callbacks=None):
     result = TUTOR_GRAPH.invoke(
         {
             "student": student,
@@ -143,7 +145,8 @@ def generate_tutor_reply(student, subject, question, chunks, history, grades):
             "chunks": chunks,
             "history": history,
             "grades": grades,
-        }
+        },
+        config={"callbacks": callbacks or [], "run_name": "answer-student-question"},
     )
     citations = [
         {
