@@ -1,7 +1,8 @@
+import os
 import unittest
 from unittest.mock import patch
 
-from services.semantic_search import search_students
+from services.semantic_search import embedding_device, search_students
 
 
 class Vector(list):
@@ -21,6 +22,12 @@ class FakeModel:
 
 
 class SemanticSearchTest(unittest.TestCase):
+    def test_embedding_device_defaults_to_cpu_and_can_be_configured(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(embedding_device(), "cpu")
+        with patch.dict(os.environ, {"EMBEDDING_DEVICE": "cuda:0"}):
+            self.assertEqual(embedding_device(), "cuda:0")
+
     @patch("services.semantic_search._load_model", return_value=None)
     def test_related_sports_terms_rank_first(self, _):
         students = [

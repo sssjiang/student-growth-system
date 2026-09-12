@@ -32,7 +32,14 @@ def _load_model():
             "true",
             "yes",
         }
-        _model = SentenceTransformer(model_name, local_files_only=local_only)
+        # SentenceTransformers otherwise auto-selects Apple MPS when available.
+        # Metal is not fork-safe in Celery prefork workers, so CPU is the safe
+        # default for both local workers and Linux deployments.
+        _model = SentenceTransformer(
+            model_name,
+            device=embedding_device(),
+            local_files_only=local_only,
+        )
     except Exception:
         _model_failed = True
     return _model
@@ -78,6 +85,10 @@ def encode_texts(texts):
 
 def embedding_model_name():
     return os.getenv("EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
+
+
+def embedding_device():
+    return os.getenv("EMBEDDING_DEVICE", "cpu").strip() or "cpu"
 
 
 def _stored_vector(student, expected_model, expected_dimensions):

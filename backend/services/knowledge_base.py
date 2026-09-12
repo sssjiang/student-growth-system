@@ -3,37 +3,55 @@ import math
 import re
 from collections import Counter
 
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from services.semantic_search import embedding_model_name, encode_interest, encode_texts
 
 
 SUBJECTS = {"chinese", "math", "english", "politics"}
 
+# Prefer document and sentence boundaries before falling back to individual
+# characters. Chinese punctuation is included explicitly because textbook text
+# often has no spaces between sentences.
+TEXTBOOK_SEPARATORS = [
+    "\n\n",
+    "\n",
+    "。",
+    "！",
+    "？",
+    "；",
+    ". ",
+    "! ",
+    "? ",
+    "; ",
+    "，",
+    ", ",
+    " ",
+    "",
+]
+
 
 def split_document(text, max_chars=1200, overlap_chars=120):
-    """Split on paragraphs first and retain a small tail when a section is long."""
-    paragraphs = [item.strip() for item in re.split(r"\n\s*\n|\r\n\s*\r\n", text) if item.strip()]
-    if not paragraphs:
-        paragraphs = [item.strip() for item in text.splitlines() if item.strip()]
-    chunks, current = [], ""
-    for paragraph in paragraphs:
-        if len(paragraph) > max_chars:
-            long_section = f"{current}\n\n{paragraph}".strip()
-            current = ""
-            start = 0
-            while start < len(long_section):
-                chunks.append(long_section[start : start + max_chars])
-                start += max_chars - overlap_chars
-            continue
-        candidate = f"{current}\n\n{paragraph}".strip()
-        if current and len(candidate) > max_chars:
-            chunks.append(current)
-            tail = current[-overlap_chars:] if overlap_chars else ""
-            current = f"{tail}\n\n{paragraph}".strip()
-        else:
-            current = candidate
-    if current:
-        chunks.append(current)
-    return [item for item in chunks if len(item.strip()) >= 20]
+    """Split textbook text recursively while preserving natural boundaries."""
+    content = str(text or "").strip()
+    if not content:
+        return []
+    if max_chars <= 0:
+        raise ValueError("max_chars must be greater than zero")
+    if overlap_chars < 0 or overlap_chars >= max_chars:
+        raise ValueError("overlap_chars must be between zero and max_chars")
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=max_chars,
+        chunk_overlap=overlap_chars,
+        separators=TEXTBOOK_SEPARATORS,
+        keep_separator="end",
+        length_function=len,
+        strip_whitespace=True,
+    )
+    # Keep short headings and concise facts. Dropping them here loses useful
+    # section context and can make a short document impossible to index.
+    return [chunk for chunk in splitter.split_text(content) if chunk.strip()]
 
 
 def create_chunk_records(text):

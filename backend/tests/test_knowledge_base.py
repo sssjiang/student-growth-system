@@ -15,8 +15,26 @@ class KnowledgeBaseTest(unittest.TestCase):
         text = "\n\n".join(["第一节 函数", "函数是两个集合之间的对应关系。" * 80, "例题与解析"])
         chunks = split_document(text, max_chars=300, overlap_chars=30)
         self.assertGreater(len(chunks), 2)
-        self.assertTrue(all(len(chunk) <= 330 for chunk in chunks))
+        self.assertTrue(all(len(chunk) <= 300 for chunk in chunks))
         self.assertIn("第一节 函数", chunks[0])
+
+    def test_split_document_prefers_chinese_sentence_boundaries(self):
+        text = "第一章 函数\n" + "函数表示两个集合之间的对应关系。" * 20
+        chunks = split_document(text, max_chars=90, overlap_chars=10)
+
+        self.assertGreater(len(chunks), 1)
+        self.assertTrue(all(len(chunk) <= 90 for chunk in chunks))
+        self.assertEqual(chunks[0], "第一章 函数")
+        self.assertTrue(all(chunk.endswith("。") for chunk in chunks[1:]))
+
+    def test_split_document_rejects_invalid_overlap(self):
+        with self.assertRaises(ValueError):
+            split_document("有效的教材内容。" * 10, max_chars=100, overlap_chars=100)
+
+    def test_split_document_keeps_short_heading_and_content(self):
+        chunks = split_document("第一节\n\n勾股定理。", max_chars=100, overlap_chars=10)
+
+        self.assertEqual("\n\n".join(chunks), "第一节\n\n勾股定理。")
 
     @patch("services.knowledge_base.encode_interest", return_value=None)
     def test_keyword_retrieval_ranks_related_material_first(self, _):

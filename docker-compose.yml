@@ -10,6 +10,7 @@ x-backend-environment: &backend-environment
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
   OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
   OPENAI_MODEL: ${OPENAI_MODEL:-}
+  EMBEDDING_DEVICE: ${EMBEDDING_DEVICE:-cpu}
   LongCat_API_KEY: ${LongCat_API_KEY:-}
   OpenAI_endpoint: ${OpenAI_endpoint:-}
   LongCat_MODEL: ${LongCat_MODEL:-}
