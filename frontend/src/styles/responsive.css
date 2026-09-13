@@ -24,9 +24,6 @@
   .story-copy h1 {
     font-size: 40px;
   }
-  .report-columns {
-    grid-template-columns: 1fr;
-  }
 }
 @media (max-width: 720px) {
   .sidebar {
@@ -139,10 +136,6 @@
   }
   .student-banner-actions button {
     flex: 1;
-  }
-  .insight-grid,
-  .report-columns {
-    grid-template-columns: 1fr;
   }
   .directory-tools {
     align-items: flex-start;

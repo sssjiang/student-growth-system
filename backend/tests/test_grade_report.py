@@ -22,6 +22,8 @@ class GradeReportTest(unittest.TestCase):
         result = calculate_metrics(grades)
         self.assertEqual(result["subjects"]["chinese"]["change"], 5.0)
         self.assertEqual(result["subjects"]["english"]["prediction"], 94.0)
+        self.assertEqual(result["subjects"]["math"]["latest"], 75.0)
+        self.assertEqual(result["data_quality"]["forecast_confidence"], "low")
 
     def test_langgraph_uses_local_report_when_ai_is_disabled(self):
         grades = [
@@ -31,15 +33,25 @@ class GradeReportTest(unittest.TestCase):
         with patch.dict("os.environ", {"AI_REPORT_ENABLED": "false"}):
             report, metrics, source = generate_report({"name": "测试学生"}, grades)
         self.assertEqual(source, "local")
-        self.assertIn("测试学生", report["summary"])
+        self.assertEqual(report["version"], 2)
+        self.assertIn("测试学生", report["executive_summary"])
+        self.assertEqual(len(report["subject_insights"]), 4)
+        self.assertGreaterEqual(len(report["action_plan"]), 2)
         self.assertEqual(metrics["overall"]["prediction"], 87.2)
 
     @patch("services.grade_report._request_ai_report")
     def test_langgraph_uses_openai_compatible_provider(self, request_report):
         request_report.return_value = {
-            "summary": "综合表现稳步提升。",
-            "highlights": ["数学保持进步。"],
-            "suggestions": ["继续进行错题复盘。"],
+            "version": 2,
+            "title": "测试学生个性化学习成长报告",
+            "executive_summary": "综合表现稳步提升。",
+            "overall_assessment": "现有成绩走势稳定。",
+            "subject_insights": [],
+            "strengths": ["数学保持进步。"],
+            "focus_areas": ["继续关注基础题正确率。"],
+            "action_plan": [],
+            "interest_connections": ["结合兴趣完成学习任务。"],
+            "teacher_notes": ["两周后复核学习效果。"],
             "disclaimer": "预测仅供教学参考。",
         }
         grades = [
@@ -54,7 +66,7 @@ class GradeReportTest(unittest.TestCase):
         with patch.dict("os.environ", env, clear=True):
             report, _, source = generate_report({"name": "测试学生"}, grades)
         self.assertEqual(source, "langgraph-openai")
-        self.assertEqual(report["summary"], "综合表现稳步提升。")
+        self.assertEqual(report["executive_summary"], "综合表现稳步提升。")
         request_report.assert_called_once()
 
 

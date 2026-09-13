@@ -1,84 +1,19 @@
 import { useQueryError } from '@/hooks/useQueryError';
 import {
-  useCreateStudentReportMutation,
   useGetStudentGradesQuery,
   useGetStudentReportQuery,
   useGetStudentsQuery,
 } from '@/api';
-import { useRef, useState } from 'react';
-import { ArrowLeft, Download, Sparkles, Target } from 'lucide-react';
+import { ArrowLeft, FileText, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Avatar, Empty, TrendChart } from '@/components';
-import { useToast } from '@/hooks/useToast';
-import { exportElementToPdf } from '@/utils/exportPdf';
-
-function ReportView({ data }) {
-  const { t } = useTranslation();
-  const { report, metrics } = data;
-  return (
-    <section className="report-section">
-      <div className="report-heading">
-        <div>
-          <span className="eyebrow">{t('detail.reportEyebrow')}</span>
-          <h2>{t('detail.reportTitle', { name: data.student?.name })}</h2>
-        </div>
-        <span className="report-source">
-          {data.generated_by?.startsWith('local')
-            ? t('detail.localSource')
-            : t('detail.aiSource')}
-        </span>
-      </div>
-      <div className="insight-grid">
-        <article className="insight lead">
-          <Sparkles />
-          <h3>{t('detail.overview')}</h3>
-          <p>{report.summary}</p>
-        </article>
-        {metrics && (
-          <article className="insight metric">
-            <Target />
-            <small>{t('detail.overallAverage')}</small>
-            <strong>{metrics.overall.average}</strong>
-            <span>
-              {t('detail.prediction', {
-                value: metrics.overall.prediction,
-              })}
-            </span>
-          </article>
-        )}
-      </div>
-      <div className="report-columns">
-        <article className="card">
-          <h3>{t('detail.highlights')}</h3>
-          {report.highlights.map((item, index) => (
-            <p className="numbered" key={item}>
-              <span>{index + 1}</span>
-              {item}
-            </p>
-          ))}
-        </article>
-        <article className="card">
-          <h3>{t('detail.suggestions')}</h3>
-          {report.suggestions.map((item, index) => (
-            <p className="numbered warm" key={item}>
-              <span>{index + 1}</span>
-              {item}
-            </p>
-          ))}
-        </article>
-      </div>
-      <p className="disclaimer">{report.disclaimer}</p>
-    </section>
-  );
-}
 
 function StudentDetailPage() {
   const { t } = useTranslation();
   const { studentId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { notify } = useToast();
   const { currentData: studentData, error: studentError } =
     useGetStudentsQuery();
   const { currentData: gradeData, error: gradeError } =
@@ -90,37 +25,11 @@ function StudentDetailPage() {
     location.state?.student ||
     null;
   const grades = gradeData?.grades || [];
-  const report = reportData?.report ? reportData : null;
-  const [createReport, { isLoading: loading }] =
-    useCreateStudentReportMutation();
-  const [exporting, setExporting] = useState(false);
-  const reportRef = useRef(null);
+  const hasReport = Boolean(reportData?.report);
   useQueryError(studentError || gradeError || reportError);
-  const generate = async () => {
-    try {
-      await createReport(studentId).unwrap();
-      notify(t('detail.generated'));
-    } catch (err) {
-      notify(err);
-    }
-  };
-  const downloadPdf = async () => {
-    setExporting(true);
-    try {
-      await exportElementToPdf(
-        reportRef.current,
-        t('detail.pdfFilename', { name: student.name }),
-        t('detail.reportTitle', { name: student.name })
-      );
-      notify(t('detail.exportSuccess'));
-    } catch (error) {
-      console.error('Could not export growth report:', error);
-      notify(t('detail.exportFailed'));
-    } finally {
-      setExporting(false);
-    }
-  };
+
   if (!student) return <Empty>{t('detail.loading')}</Empty>;
+
   return (
     <>
       <button
@@ -143,59 +52,50 @@ function StudentDetailPage() {
           </p>
         </div>
         <div className="student-banner-actions">
-          {report && (
-            <button
-              className="secondary"
-              onClick={downloadPdf}
-              disabled={exporting}
-            >
-              <Download size={17} />
-              {exporting ? t('detail.exportingPdf') : t('detail.downloadPdf')}
-            </button>
-          )}
-          <button className="primary" onClick={generate} disabled={loading}>
-            <Sparkles size={17} />
-            {loading ? t('detail.analyzing') : t('detail.generate')}
+          <button
+            className="primary"
+            onClick={() => navigate(`/teacher/students/${studentId}/report`)}
+          >
+            {hasReport ? <FileText size={17} /> : <Sparkles size={17} />}
+            {hasReport ? t('detail.viewReport') : t('detail.openReport')}
           </button>
         </div>
       </div>
-      <div className="report-export-content" ref={reportRef}>
-        <div className="report-layout">
-          <section className="card span-2">
-            <div className="card-head">
-              <div>
-                <h3>{t('detail.trajectory')}</h3>
-                <p>{t('detail.periods', { count: grades.length })}</p>
-              </div>
+      <div className="report-layout">
+        <section className="card span-2">
+          <div className="card-head">
+            <div>
+              <h3>{t('detail.trajectory')}</h3>
+              <p>{t('detail.periods', { count: grades.length })}</p>
             </div>
-            <TrendChart grades={grades} />
-          </section>
-          <section className="card profile-summary">
-            <h3>{t('detail.interests')}</h3>
-            <div className="large-tags">
-              {(student.tags_list || []).map((tag) => (
-                <span key={tag}>{tag}</span>
-              ))}
-            </div>
-            <p>
-              {student.description || student.bio || t('detail.noInterests')}
-            </p>
-          </section>
-        </div>
-        {report && <ReportView data={report} />}
-      </div>
-      {!report && (
-        <section className="card no-report">
-          <Sparkles />
-          <div>
-            <h3>{t('detail.noReport')}</h3>
-            <p>{t('detail.noReportDesc')}</p>
           </div>
-          <button className="secondary" onClick={generate}>
-            {t('detail.generateNow')}
-          </button>
+          <TrendChart grades={grades} />
         </section>
-      )}
+        <section className="card profile-summary">
+          <h3>{t('detail.interests')}</h3>
+          <div className="large-tags">
+            {(student.tags_list || []).map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+          <p>{student.description || student.bio || t('detail.noInterests')}</p>
+        </section>
+      </div>
+      <section className="card report-entry-card">
+        <Sparkles />
+        <div>
+          <h3>{hasReport ? t('detail.reportReady') : t('detail.noReport')}</h3>
+          <p>
+            {hasReport ? t('detail.reportReadyDesc') : t('detail.noReportDesc')}
+          </p>
+        </div>
+        <button
+          className="secondary"
+          onClick={() => navigate(`/teacher/students/${studentId}/report`)}
+        >
+          {hasReport ? t('detail.viewReport') : t('detail.generateNow')}
+        </button>
+      </section>
     </>
   );
 }

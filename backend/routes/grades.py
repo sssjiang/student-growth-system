@@ -81,18 +81,38 @@ def import_grades():
 @token_required("teacher")
 def create_report(student_id):
     with get_db() as db:
-        student_row = db.execute("SELECT * FROM students WHERE id=?", (student_id,)).fetchone()
+        student_row = db.execute(
+            """SELECT s.*,COALESCE(i.tags,'[]') interest_tags,
+               COALESCE(i.description,'') interest_description
+               FROM students s LEFT JOIN interests i ON i.student_id=s.id
+               WHERE s.id=?""",
+            (student_id,),
+        ).fetchone()
         if not student_row:
             return error("学生不存在", 404)
         grades = grade_rows(db, student_id)
         if len(grades) < 2:
             return error("至少需要两个学期的成绩才能生成趋势报告")
-        report, metrics, source = generate_report(dict(student_row), grades)
+        student = dict(student_row)
+        try:
+            student["tags_list"] = json.loads(student.pop("interest_tags"))
+        except (TypeError, json.JSONDecodeError):
+            student["tags_list"] = []
+        student["achievements"] = [
+            dict(row)
+            for row in db.execute(
+                """SELECT title,credential_type,issuer,awarded_at,description
+                   FROM student_files WHERE student_id=? AND status='approved'
+                   ORDER BY awarded_at DESC, id DESC LIMIT 8""",
+                (student_id,),
+            )
+        ]
+        report, metrics, source = generate_report(student, grades)
         cursor = db.execute(
             "INSERT INTO reports(student_id,content,metrics,generated_by) VALUES(?,?,?,?)",
             (student_id, json.dumps(report, ensure_ascii=False), json.dumps(metrics, ensure_ascii=False), source),
         )
-    return jsonify({"id": cursor.lastrowid, "student": dict(student_row), "report": report,
+    return jsonify({"id": cursor.lastrowid, "student": student, "report": report,
                     "metrics": metrics, "grades": grades, "generated_by": source}), 201
 
 

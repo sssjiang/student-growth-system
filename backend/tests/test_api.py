@@ -79,7 +79,14 @@ class ApiFlowTest(unittest.TestCase):
             "/api/teacher/students/1/report", headers=headers
         )
         self.assertEqual(report.status_code, 201)
-        self.assertIn("prediction", report.get_json()["metrics"]["overall"])
+        payload = report.get_json()
+        self.assertIn("prediction", payload["metrics"]["overall"])
+        self.assertEqual(payload["report"]["version"], 2)
+        self.assertEqual(
+            {item["subject"] for item in payload["report"]["subject_insights"]},
+            {"chinese", "math", "english", "politics"},
+        )
+        self.assertGreaterEqual(len(payload["report"]["action_plan"]), 2)
 
     def test_student_cannot_use_teacher_search(self):
         headers = self.login("student1", "student123")

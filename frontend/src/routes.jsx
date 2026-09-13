@@ -8,6 +8,7 @@ import {
   KnowledgeBasePage,
   SmartSearchPage,
   StudentDetailPage,
+  StudentReportPage,
   StudentDirectoryPage,
   TeacherDashboard,
 } from '@/pages/teacher';
@@ -55,6 +56,7 @@ const routes = [
       { path: 'search', element: <SmartSearchPage /> },
       { path: 'students', element: <StudentDirectoryPage /> },
       { path: 'students/:studentId', element: <StudentDetailPage /> },
+      { path: 'students/:studentId/report', element: <StudentReportPage /> },
       { path: 'credentials', element: <CredentialReviewPage /> },
       { path: 'grades/import', element: <GradeImportPage /> },
       { path: 'knowledge', element: <KnowledgeBasePage /> },
