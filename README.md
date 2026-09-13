@@ -25,13 +25,18 @@
 ```text
 student-growth-system/
 ├── backend/
-│   ├── app.py                    # Flask API 与 JWT 权限
+│   ├── app.py                    # 应用工厂、初始化与健康检查
+│   ├── routes/                   # 按认证、学生、教师、成绩、凭证、教材、辅导、管理拆分
+│   │   ├── security.py          # JWT 校验与角色权限
+│   │   └── common.py            # 共用响应与数据库结果序列化
 │   ├── database.py               # SQLite 连接和初始化
 │   ├── celery_app.py             # Celery 与 Redis 配置
 │   ├── tasks.py                  # 后台凭证分析与教材索引任务
 │   ├── schema.sql                # 用户、学生、兴趣、成绩、文件、报告表
 │   ├── seed.py                   # 演示数据
 │   └── services/
+│       ├── document_extraction.py # PDF、DOCX、图片 OCR 与文本解析
+│       ├── credential_analysis.py # 凭证字段提取与一致性分析流程
 │       ├── semantic_search.py    # 本地语义检索
 │       ├── knowledge_base.py     # 教材切片与混合检索
 │       ├── tutor.py              # LangGraph RAG 辅导流程
@@ -40,7 +45,10 @@ student-growth-system/
 │   └── src/
 │       ├── api/                  # 按 Auth/Student/Teacher 领域封装
 │       ├── components/           # 单一职责公共组件与应用布局
-│       ├── contexts/             # 登录状态与全局提示
+│       ├── store/                # Redux Toolkit store、登录与提示 slice
+│       ├── hooks/                # Redux 访问、接口错误、文件预览与分析轮询
+│       ├── styles.css            # 样式导入入口，保留原有覆盖顺序
+│       ├── styles/               # 基础、布局、组件、业务页面与响应式样式
 │       ├── pages/
 │       │   ├── teacher/          # 工作台、检索、档案、导入、报告详情
 │       │   └── student/          # 个人资料、成绩、成长材料
@@ -49,6 +57,14 @@ student-growth-system/
 ```
 
 ## 本地启动
+
+维护时将新接口放入对应的 `backend/routes/` 业务模块，通过 `routes/__init__.py` 注册 Blueprint；请求中的配置使用 `current_app`，文件存储使用 `current_app.extensions["file_storage"]`。业务流程和文档解析放入 `services/`，避免重新堆积到应用入口。
+
+样式在 `frontend/src/styles/` 中按用途维护；`styles.css` 仅按固定顺序导入。响应式覆盖单独保留在对应的 `*-responsive.css` 和 `responsive.css` 中，调整导入顺序前应检查覆盖关系。翻译文件继续按语言完整保存。
+
+前端使用 Redux Toolkit + React Redux：`store/authSlice.js` 管理用户会话，`store/toastSlice.js` 管理全局提示；持久化和提示消失计时由 listener middleware 处理。组件通过 `hooks/useAuth.js`、`hooks/useToast.js` 访问这些状态。
+
+接口数据统一由 RTK Query 管理，`api/baseApi.js` 提供请求、鉴权和缓存基础设施，Auth/Student/Teacher/Admin API 文件按业务注入端点并导出 hooks。页面直接读取 query 结果，写操作通过 mutation 和 tags 刷新相关缓存，不再将列表复制到组件状态。登录、退出或会话过期会取消旧请求并清空缓存。表单草稿、筛选条件和弹窗选择继续使用局部状态；文件、Blob 和对象 URL 不放入 Redux state。
 
 需要 Python 3.10+ 和 Node.js 18+。
 
@@ -187,6 +203,7 @@ cd backend
 python -m unittest discover -s tests -v
 
 cd ../frontend
+npm test
 npm run lint
 npm run i18n:check
 npm run format:check

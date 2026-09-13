@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import {
+  useGetTutorConversationQuery,
+  useGetTutorConversationsQuery,
+  useSendTutorMessageMutation,
+} from '@/api';
+import { useEffect, useRef, useState } from 'react';
 import {
   BookOpenCheck,
   Bot,
@@ -9,88 +15,76 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { StudentAPI } from '@/api';
 import { PageTitle } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 
+const EMPTY_MESSAGES = [];
 const SUBJECTS = ['chinese', 'math', 'english', 'politics'];
 
 function TutorPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
   const [subject, setSubject] = useState('math');
-  const [conversations, setConversations] = useState([]);
+  const { data: conversationList, error: listError } =
+    useGetTutorConversationsQuery();
+  const conversations = conversationList?.conversations || [];
   const [conversationId, setConversationId] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const {
+    currentData: conversationData,
+    error: conversationError,
+    isFetching: loadingConversation,
+  } = useGetTutorConversationQuery(conversationId, { skip: !conversationId });
+  const [sendMessage, { isLoading: sending }] = useSendTutorMessageMutation();
   const [draft, setDraft] = useState('');
-  const [sending, setSending] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState(null);
+  const savedMessages = conversationData?.messages || EMPTY_MESSAGES;
+  const messages = pendingMessage
+    ? [...savedMessages, pendingMessage]
+    : savedMessages;
   const endRef = useRef(null);
-
-  const loadConversations = useCallback(
-    () =>
-      StudentAPI.getTutorConversations()
-        .then((data) => setConversations(data.conversations))
-        .catch((err) => notify(err.message)),
-    [notify]
-  );
-
-  useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+  useQueryError(listError || conversationError);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, sending]);
+  }, [savedMessages, pendingMessage, sending]);
 
   const newConversation = (nextSubject = subject) => {
     setConversationId(null);
-    setMessages([]);
     setSubject(nextSubject);
     setDraft('');
+    setPendingMessage(null);
   };
 
-  const openConversation = async (conversation) => {
-    try {
-      const data = await StudentAPI.getTutorConversation(conversation.id);
-      setConversationId(conversation.id);
-      setSubject(conversation.subject);
-      setMessages(data.messages);
-    } catch (err) {
-      notify(err.message);
-    }
+  const openConversation = (conversation) => {
+    setConversationId(conversation.id);
+    setSubject(conversation.subject);
+    setDraft('');
+    setPendingMessage(null);
   };
 
   const send = async (event) => {
     event.preventDefault();
     const question = draft.trim();
-    if (!question || sending) return;
-    const localId = `local-${Date.now()}`;
+    if (!question || sending || loadingConversation) return;
     setDraft('');
-    setMessages((current) => [
-      ...current,
-      {
-        id: localId,
-        role: 'user',
-        content: question,
-        citations: [],
-      },
-    ]);
-    setSending(true);
+    setPendingMessage({
+      id: 'pending',
+      role: 'user',
+      content: question,
+      citations: [],
+    });
     try {
-      const data = await StudentAPI.sendTutorMessage(
+      const data = await sendMessage({
         subject,
-        question,
-        conversationId
-      );
+        message: question,
+        conversationId,
+      }).unwrap();
       setConversationId(data.conversation_id);
-      setMessages((current) => [...current, data.message]);
-      loadConversations();
     } catch (err) {
-      notify(err.message);
-      setMessages((current) => current.filter((item) => item.id !== localId));
+      notify(err);
       setDraft(question);
     } finally {
-      setSending(false);
+      setPendingMessage(null);
     }
   };
 
@@ -235,7 +229,10 @@ function TutorPage() {
                 }
               }}
             />
-            <button className="primary" disabled={!draft.trim() || sending}>
+            <button
+              className="primary"
+              disabled={!draft.trim() || sending || loadingConversation}
+            >
               <Send />
             </button>
           </form>

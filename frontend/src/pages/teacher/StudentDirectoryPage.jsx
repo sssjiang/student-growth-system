@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useGetStudentsQuery } from '@/api';
+import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { TeacherAPI } from '@/api';
 import { PageTitle, StudentRow } from '@/components';
 
 function StudentDirectoryPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [students, setStudents] = useState([]);
+  const { data, error } = useGetStudentsQuery();
+  const students = data?.students || [];
+  useQueryError(error);
   const [filter, setFilter] = useState('');
-  useEffect(() => {
-    TeacherAPI.getStudents().then((data) => setStudents(data.students));
-  }, []);
+
   const shown = students.filter((student) =>
     (student.name + student.student_no + student.class_name + student.tags_text)
       .toLowerCase()

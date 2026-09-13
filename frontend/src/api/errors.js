@@ -1,6 +1,3 @@
-import i18n from '@/locales/i18n';
-
-const API_ROOT = import.meta.env.VITE_API_ROOT || '/api';
 const ERROR_KEYS = {
   请先登录: 'signInRequired',
   '登录已过期，请重新登录': 'sessionExpired',
@@ -42,63 +39,9 @@ const ERROR_KEYS = {
   调试记录不存在: 'traceMissing',
 };
 
-class ApiClient {
-  async request(path, options = {}) {
-    const token = localStorage.getItem('student_token');
-    const isFormData = options.body instanceof FormData;
-    const headers = {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...options.headers,
-    };
-
-    if (token) headers.Authorization = `Bearer ${token}`;
-
-    const response = await fetch(`${API_ROOT}${path}`, { ...options, headers });
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      if (response.status === 401 && token) {
-        localStorage.removeItem('student_token');
-        localStorage.removeItem('student_user');
-      }
-      const errorKey = ERROR_KEYS[data.error];
-      throw new Error(
-        errorKey
-          ? i18n.t(`apiErrors.${errorKey}`)
-          : data.error || i18n.t('common.requestFailed')
-      );
-    }
-
-    return data;
-  }
-
-  async getBlob(path) {
-    const token = localStorage.getItem('student_token');
-    const response = await fetch(`${API_ROOT}${path}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    if (!response.ok) throw new Error(i18n.t('common.fileReadFailed'));
-    return response.blob();
-  }
-
-  get(path) {
-    return this.request(path);
-  }
-
-  post(path, body) {
-    return this.request(path, {
-      method: 'POST',
-      body: body instanceof FormData ? body : JSON.stringify(body),
-    });
-  }
-
-  put(path, body) {
-    return this.request(path, { method: 'PUT', body: JSON.stringify(body) });
-  }
-
-  delete(path) {
-    return this.request(path, { method: 'DELETE' });
-  }
+export function errorMessage(error, t) {
+  const key = ERROR_KEYS[error?.message];
+  return key
+    ? t(`apiErrors.${key}`)
+    : error?.message || t('common.requestFailed');
 }
-
-export default new ApiClient();

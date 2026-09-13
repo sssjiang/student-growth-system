@@ -1,36 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import {
+  useGetAdminKnowledgeQuery,
+  useGetKnowledgeChunksQuery,
+  useReindexAdminKnowledgeMutation,
+} from '@/api';
+import { useState } from 'react';
 import { BookOpen, Eye, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AdminAPI } from '@/api';
 import { Empty, Modal, PageTitle } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 
 function AdminKnowledgePage() {
   const { t } = useTranslation();
   const { notify } = useToast();
-  const [documents, setDocuments] = useState([]);
-  const [detail, setDetail] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const load = () =>
-    AdminAPI.getKnowledge().then((data) => setDocuments(data.documents));
-
-  useEffect(() => {
-    load().catch(() => {});
-  }, []);
-
-  const inspect = async (document) => {
-    setLoading(true);
-    try {
-      setDetail(await AdminAPI.getKnowledgeChunks(document.id));
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const { data, error } = useGetAdminKnowledgeQuery(undefined, {
+    pollingInterval: 2500,
+  });
+  const documents = data?.documents || [];
+  const [detailId, setDetailId] = useState(null);
+  const {
+    currentData: detail,
+    error: detailError,
+    isFetching: loading,
+  } = useGetKnowledgeChunksQuery(detailId, { skip: detailId === null });
+  const [reindexKnowledge] = useReindexAdminKnowledgeMutation();
+  useQueryError(error || detailError);
+  const inspect = (document) => setDetailId(document.id);
   const reindex = async (document) => {
-    await AdminAPI.reindexKnowledge(document.id);
-    notify(t('admin.knowledge.queued'));
-    await load();
+    try {
+      await reindexKnowledge(document.id).unwrap();
+      notify(t('admin.knowledge.queued'));
+    } catch (error) {
+      notify(error);
+    }
   };
 
   return (
@@ -105,8 +107,7 @@ function AdminKnowledgePage() {
         <Modal
           title={detail?.document.title || t('common.loading')}
           onClose={() => {
-            setDetail(null);
-            setLoading(false);
+            setDetailId(null);
           }}
           size="lg"
         >

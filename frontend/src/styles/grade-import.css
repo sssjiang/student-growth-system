@@ -1,0 +1,60 @@
+.two-column {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+.upload-zone {
+  border: 1.5px dashed #cbd8cf;
+  background: #f8faf7;
+  border-radius: 14px;
+  padding: 48px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.upload-zone > span {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: #e0ece4;
+  color: var(--green);
+  border-radius: 16px;
+  margin: auto;
+}
+.upload-zone h3 {
+  margin-top: 15px;
+}
+.upload-zone p {
+  font-size: 10px;
+}
+.guide code {
+  display: block;
+  padding: 14px;
+  background: #f5f6f2;
+  border-radius: 9px;
+  margin: 18px 0;
+  color: #516057;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.guide ul {
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 2;
+}
+.guide a {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 600;
+}
+.success-box {
+  margin-top: 12px;
+  padding: 12px;
+  background: #e5f2e9;
+  color: #356347;
+  border-radius: 9px;
+  font-size: 11px;
+  display: flex;
+  gap: 8px;
+}

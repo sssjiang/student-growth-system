@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useFileApi } from '@/hooks/useFileApi';
+import { useQueryError } from '@/hooks/useQueryError';
+import {
+  useDeleteFileMutation,
+  useGetFilesQuery,
+  useResubmitFileMutation,
+  useUploadFileMutation,
+} from '@/api';
+import { useState } from 'react';
 import {
   Download,
   Eye,
@@ -9,67 +17,55 @@ import {
   Upload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { StudentAPI } from '@/api';
 import { Empty, FilePreviewModal, Modal, PageTitle } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 import { canPreview, formatFileSize, saveBlob } from '@/utils/files';
 import CredentialForm from './CredentialForm';
 
 function FilesPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
-  const [files, setFiles] = useState([]);
+  const { data, error } = useGetFilesQuery();
+  const files = data?.files || [];
+  const [uploadFile, uploadState] = useUploadFileMutation();
+  const [resubmitFile, resubmitState] = useResubmitFileMutation();
+  const [deleteFile, deleteState] = useDeleteFileMutation();
+  const loading =
+    uploadState.isLoading || resubmitState.isLoading || deleteState.isLoading;
+  const { previewFile, downloadFile } = useFileApi();
+  useQueryError(error);
   const [formTarget, setFormTarget] = useState(undefined);
   const [preview, setPreview] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const load = useCallback(() => {
-    StudentAPI.getFiles().then((data) => setFiles(data.files));
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const submitCredential = async (file, metadata) => {
-    setLoading(true);
     try {
-      const data = formTarget
-        ? await StudentAPI.resubmitFile(formTarget.id, file, metadata)
-        : await StudentAPI.uploadFile(file, metadata);
-      setFiles(data.files);
+      await (formTarget
+        ? resubmitFile({ id: formTarget.id, file, metadata }).unwrap()
+        : uploadFile({ file, metadata }).unwrap());
       setFormTarget(undefined);
       notify(t(formTarget ? 'files.resubmitted' : 'files.uploaded'));
     } catch (err) {
-      notify(err.message);
-    } finally {
-      setLoading(false);
+      notify(err);
     }
   };
 
   const deleteCredential = async () => {
-    setLoading(true);
     try {
-      await StudentAPI.deleteFile(deleteTarget.id);
-      setFiles((current) =>
-        current.filter((item) => item.id !== deleteTarget.id)
-      );
+      await deleteFile(deleteTarget.id).unwrap();
       setDeleteTarget(null);
       notify(t('files.deleted'));
     } catch (err) {
-      notify(err.message);
-    } finally {
-      setLoading(false);
+      notify(err);
     }
   };
 
   const downloadCredential = async (credential) => {
     try {
-      const blob = await StudentAPI.downloadFile(credential.id);
+      const blob = await downloadFile(credential.id);
       saveBlob(blob, credential.original_name);
     } catch (err) {
-      notify(err.message);
+      notify(err);
     }
   };
 
@@ -210,7 +206,7 @@ function FilesPage() {
       {preview && (
         <FilePreviewModal
           credential={preview}
-          loadBlob={StudentAPI.previewFile}
+          loadBlob={previewFile}
           onClose={() => setPreview(null)}
         />
       )}

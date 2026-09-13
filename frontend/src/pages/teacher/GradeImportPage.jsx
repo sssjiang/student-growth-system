@@ -1,27 +1,23 @@
+import { useImportGradesMutation } from '@/api';
 import { useState } from 'react';
 import { Check, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { TeacherAPI } from '@/api';
 import { PageTitle } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 
 function GradeImportPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [importGrades, { data: result, isLoading: loading }] =
+    useImportGradesMutation();
   const submit = async () => {
     if (!file) return;
-    setLoading(true);
     try {
-      const data = await TeacherAPI.importGrades(file);
-      setResult(data);
+      const data = await importGrades(file).unwrap();
       notify(t('gradeImport.success', { count: data.imported }));
     } catch (err) {
-      notify(err.message);
-    } finally {
-      setLoading(false);
+      notify(err);
     }
   };
   return (

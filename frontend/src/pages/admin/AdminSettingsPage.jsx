@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useGetSettingsQuery } from '@/api';
 import { Bot, CheckCircle2, Database, Eye, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AdminAPI } from '@/api';
 import { PageTitle } from '@/components';
 
 const State = ({ enabled, t }) => (
@@ -13,12 +13,8 @@ const State = ({ enabled, t }) => (
 
 function AdminSettingsPage() {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState(null);
-  useEffect(() => {
-    AdminAPI.getSettings()
-      .then(setSettings)
-      .catch(() => {});
-  }, []);
+  const { data: settings, error } = useGetSettingsQuery();
+  useQueryError(error);
   if (!settings) return <p>{t('common.loading')}</p>;
   return (
     <>

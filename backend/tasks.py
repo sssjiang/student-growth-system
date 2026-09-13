@@ -6,7 +6,8 @@ from celery.signals import worker_process_init
 
 from celery_app import celery_app
 from database import get_db, init_db
-from services.credential_analysis import analyze_credential, extract_document
+from services.credential_analysis import analyze_credential
+from services.document_extraction import extract_document
 from services.knowledge_base import create_chunk_records
 
 

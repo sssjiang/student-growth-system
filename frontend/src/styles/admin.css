@@ -1,0 +1,389 @@
+/* Administration */
+.admin-stats {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.admin-panel {
+  margin-top: 22px;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 13px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.admin-table th {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-table td:first-child {
+  min-width: 260px;
+}
+
+.admin-two-column {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.4fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.admin-create-user {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-create-user .card-head {
+  align-items: flex-start;
+}
+
+.admin-create-user .card-head > svg {
+  color: var(--green);
+}
+
+.admin-user-list,
+.admin-knowledge-list,
+.trace-list {
+  display: grid;
+}
+
+.admin-user-list article,
+.admin-knowledge-list article {
+  display: grid;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 3px;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-user-list article {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+
+.admin-user-list b,
+.admin-user-list small {
+  display: block;
+}
+
+.admin-user-list small,
+.admin-user-list time,
+.admin-knowledge-list p,
+.admin-knowledge-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-role-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--green);
+  background: #eaf3ed;
+}
+
+.admin-role-icon.admin {
+  color: #655b24;
+  background: #f7f0d8;
+}
+
+.admin-role-icon svg {
+  width: 19px;
+}
+
+.admin-knowledge-list article {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+
+.admin-knowledge-list p {
+  margin: 5px 0 2px;
+}
+
+.admin-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-chunk-list,
+.trace-chunks {
+  max-height: min(68vh, 720px);
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding-right: 5px;
+}
+
+.admin-chunk-list article,
+.trace-chunks article {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 14px;
+  background: #fafbf8;
+}
+
+.admin-chunk-list header,
+.trace-chunks header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-chunk-list header span,
+.trace-chunks small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.admin-chunk-list p,
+.trace-chunks p {
+  white-space: pre-wrap;
+  color: #4b574f;
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.compact-select {
+  min-width: 150px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.trace-list > button {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto 20px;
+  gap: 13px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.trace-list > button:hover {
+  background: #f7faf7;
+}
+
+.trace-state {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.trace-state.success {
+  color: var(--green);
+  background: #eaf3ed;
+}
+
+.trace-state.empty {
+  color: #a23a3a;
+  background: #feecec;
+}
+
+.trace-state svg,
+.trace-list > button > svg {
+  width: 18px;
+}
+
+.trace-main b,
+.trace-main small,
+.trace-metrics b,
+.trace-metrics small {
+  display: block;
+}
+
+.trace-main small,
+.trace-metrics small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.trace-metrics {
+  min-width: 76px;
+  text-align: right;
+}
+
+.trace-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.trace-summary span {
+  padding: 12px;
+  border-radius: 11px;
+  background: #f4f7f3;
+}
+
+.trace-summary small,
+.trace-summary b {
+  display: block;
+}
+
+.trace-summary small {
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.trace-chunks article.selected {
+  border-color: #a9c5b4;
+  background: #f2f8f4;
+}
+
+.trace-rank {
+  flex: none;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.trace-chunks header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.trace-chunks header b,
+.trace-chunks header small {
+  display: block;
+}
+
+.selected-badge,
+.config-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #267150;
+  background: #e6f5ec;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.selected-badge svg,
+.config-state svg {
+  width: 13px;
+  height: 13px;
+}
+
+.score-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.score-strip span {
+  padding: 4px 8px;
+  border-radius: 7px;
+  color: var(--muted);
+  background: #edf1ed;
+  font-size: 10px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.config-card header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.config-card header > svg {
+  color: var(--green);
+}
+
+.config-card header h3,
+.config-card header p {
+  margin: 0;
+}
+
+.config-card header p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.config-card dl,
+.config-card dd {
+  margin: 0;
+}
+
+.config-card dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.config-card dt {
+  color: var(--muted);
+}
+
+.config-card dd {
+  max-width: 58%;
+  overflow-wrap: anywhere;
+  text-align: right;
+  font-weight: 600;
+}
+
+.config-state.off {
+  color: #8b5252;
+  background: #faeaea;
+}
+
+@media (max-width: 1180px) {
+  .admin-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .settings-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-stats,
+  .settings-grid,
+  .admin-two-column,
+  .trace-summary {
+    grid-template-columns: 1fr;
+  }
+  .trace-list > button {
+    grid-template-columns: 40px minmax(0, 1fr) 18px;
+  }
+  .trace-metrics {
+    display: none;
+  }
+}

@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useGetOwnGradesQuery } from '@/api';
+import { useMemo } from 'react';
 import { CalendarDays, GraduationCap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { StudentAPI } from '@/api';
 import { PageTitle, StatCard, TrendChart } from '@/components';
+
+const EMPTY_GRADES = [];
 
 function GradesPage() {
   const { t } = useTranslation();
-  const [grades, setGrades] = useState([]);
-  useEffect(() => {
-    StudentAPI.getGrades().then((data) => setGrades(data.grades));
-  }, []);
+  const { data, error } = useGetOwnGradesQuery();
+  const grades = data?.grades || EMPTY_GRADES;
+  useQueryError(error);
   const average = useMemo(
     () =>
       grades.length

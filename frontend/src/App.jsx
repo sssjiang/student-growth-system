@@ -1,6 +1,7 @@
 import { useRoutes } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ToastProvider } from '@/contexts/ToastContext';
+import { Provider, useSelector } from 'react-redux';
+import { store } from '@/store';
+import Toast from '@/components/Toast';
 import routes from '@/routes';
 
 function AppRoutes() {
@@ -9,12 +10,16 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <AppRoutes />
-      </ToastProvider>
-    </AuthProvider>
+    <Provider store={store}>
+      <SessionRoutes />
+      <Toast />
+    </Provider>
   );
+}
+
+function SessionRoutes() {
+  const version = useSelector((state) => state.auth.version);
+  return <AppRoutes key={version} />;
 }
 
 export default App;

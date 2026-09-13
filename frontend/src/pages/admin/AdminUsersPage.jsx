@@ -1,32 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useCreateUserMutation, useGetUsersQuery } from '@/api';
+import { useState } from 'react';
 import { ShieldCheck, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AdminAPI } from '@/api';
 import { PageTitle } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 
 function AdminUsersPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
-  const [users, setUsers] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const { data, error } = useGetUsersQuery();
+  const users = data?.users || [];
+  useQueryError(error);
+  const [createUser, { isLoading: saving }] = useCreateUserMutation();
+
   const [form, setForm] = useState({
     username: '',
     password: '',
     display_name: '',
     role: 'teacher',
   });
-  const load = () => AdminAPI.getUsers().then((data) => setUsers(data.users));
-
-  useEffect(() => {
-    load().catch(() => {});
-  }, []);
-
   const submit = async (event) => {
     event.preventDefault();
-    setSaving(true);
     try {
-      await AdminAPI.createUser(form);
+      await createUser(form).unwrap();
       setForm({
         username: '',
         password: '',
@@ -34,11 +31,8 @@ function AdminUsersPage() {
         role: 'teacher',
       });
       notify(t('admin.users.created'));
-      await load();
     } catch (error) {
-      notify(error.message, 'error');
-    } finally {
-      setSaving(false);
+      notify(error);
     }
   };
 

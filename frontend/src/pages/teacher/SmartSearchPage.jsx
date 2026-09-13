@@ -1,27 +1,22 @@
+import { errorMessage } from '@/api/errors';
+import { useSearchStudentsMutation } from '@/api';
 import { useState } from 'react';
 import { BrainCircuit, Search, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { TeacherAPI } from '@/api';
 import { PageTitle, StudentRow } from '@/components';
 
 function SmartSearchPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState(() => t('search.defaultQuery'));
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const search = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      setResult(await TeacherAPI.searchStudents(query));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const [
+    searchStudents,
+    { data: result, isLoading: loading, error: queryError },
+  ] = useSearchStudentsMutation();
+  const error = queryError ? errorMessage(queryError, t) : '';
+  const search = () => {
+    searchStudents(query);
   };
   const openStudent = (student) =>
     navigate(`/teacher/students/${student.id}`, { state: { student } });

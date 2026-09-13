@@ -1,54 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useGetProfileQuery, useUpdateProfileMutation } from '@/api';
+import { useState } from 'react';
 import { Check, Pencil, Plus, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { StudentAPI } from '@/api';
 import { Empty, Field, PageTitle } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 
 function ProfilePage() {
   const { t } = useTranslation();
   const { notify } = useToast();
-  const [form, setForm] = useState(null);
-  const [savedProfile, setSavedProfile] = useState(null);
+  const { data, error } = useGetProfileQuery();
+  const savedProfile = data?.student;
+  const [draft, setDraft] = useState(null);
+  const form = draft || savedProfile;
+  const editing = draft !== null;
   const [newTag, setNewTag] = useState('');
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  useEffect(() => {
-    StudentAPI.getProfile().then((data) => {
-      const profile = { ...data.student, tags: [...data.student.tags] };
-      setForm(profile);
-      setSavedProfile(profile);
-    });
-  }, []);
+  const [updateProfile, { isLoading: saving }] = useUpdateProfileMutation();
+  useQueryError(error);
   if (!form) return <Empty>{t('profile.loading')}</Empty>;
+  const startEditing = () => {
+    setDraft({ ...savedProfile, tags: [...savedProfile.tags] });
+  };
   const update = (event) =>
-    setForm({ ...form, [event.target.name]: event.target.value });
+    setDraft({ ...form, [event.target.name]: event.target.value });
   const addTag = () => {
     const tag = newTag.trim();
     if (tag && !form.tags.includes(tag))
-      setForm({ ...form, tags: [...form.tags, tag] });
+      setDraft({ ...form, tags: [...form.tags, tag] });
     setNewTag('');
   };
   const save = async () => {
-    setSaving(true);
     try {
-      const data = await StudentAPI.updateProfile(form);
-      const profile = { ...data.student, tags: [...data.student.tags] };
-      setForm(profile);
-      setSavedProfile(profile);
-      setEditing(false);
+      await updateProfile(draft).unwrap();
+      setDraft(null);
       setNewTag('');
       notify(t('profile.saved'));
     } catch (err) {
-      notify(err.message);
-    } finally {
-      setSaving(false);
+      notify(err);
     }
   };
   const cancelEditing = () => {
-    setForm({ ...savedProfile, tags: [...savedProfile.tags] });
+    setDraft(null);
     setNewTag('');
-    setEditing(false);
   };
   return (
     <>
@@ -60,7 +53,11 @@ function ProfilePage() {
           <div className="profile-actions">
             {editing ? (
               <>
-                <button className="secondary" onClick={cancelEditing}>
+                <button
+                  className="secondary"
+                  onClick={cancelEditing}
+                  disabled={saving}
+                >
                   <X size={17} />
                   {t('common.cancel')}
                 </button>
@@ -70,7 +67,7 @@ function ProfilePage() {
                 </button>
               </>
             ) : (
-              <button className="primary" onClick={() => setEditing(true)}>
+              <button className="primary" onClick={startEditing}>
                 <Pencil size={17} />
                 {t('common.edit')}
               </button>
@@ -87,7 +84,7 @@ function ProfilePage() {
                 name="name"
                 value={form.name}
                 onChange={update}
-                disabled={!editing}
+                disabled={!editing || saving}
               />
             </Field>
             <Field label={t('profile.studentNo')}>
@@ -98,7 +95,7 @@ function ProfilePage() {
                 name="gender"
                 value={form.gender}
                 onChange={update}
-                disabled={!editing}
+                disabled={!editing || saving}
               >
                 <option value="">{t('common.select')}</option>
                 <option value="男">{t('profile.male')}</option>
@@ -110,7 +107,7 @@ function ProfilePage() {
                 name="grade"
                 value={form.grade}
                 onChange={update}
-                disabled={!editing}
+                disabled={!editing || saving}
               />
             </Field>
             <Field label={t('profile.class')}>
@@ -118,7 +115,7 @@ function ProfilePage() {
                 name="class_name"
                 value={form.class_name}
                 onChange={update}
-                disabled={!editing}
+                disabled={!editing || saving}
               />
             </Field>
             <Field label={t('profile.birthday')}>
@@ -127,7 +124,7 @@ function ProfilePage() {
                 type="date"
                 value={form.birthday}
                 onChange={update}
-                disabled={!editing}
+                disabled={!editing || saving}
               />
             </Field>
             <Field label={t('profile.email')}>
@@ -135,7 +132,7 @@ function ProfilePage() {
                 name="email"
                 value={form.email}
                 onChange={update}
-                disabled={!editing}
+                disabled={!editing || saving}
               />
             </Field>
             <Field label={t('profile.phone')}>
@@ -143,7 +140,7 @@ function ProfilePage() {
                 name="phone"
                 value={form.phone}
                 onChange={update}
-                disabled={!editing}
+                disabled={!editing || saving}
               />
             </Field>
           </div>
@@ -160,8 +157,9 @@ function ProfilePage() {
                 {tag}
                 {editing && (
                   <button
+                    disabled={saving}
                     onClick={() =>
-                      setForm({
+                      setDraft({
                         ...form,
                         tags: form.tags.filter((item) => item !== tag),
                       })
@@ -177,6 +175,7 @@ function ProfilePage() {
           {editing && (
             <div className="tag-input">
               <input
+                disabled={saving}
                 value={newTag}
                 onChange={(event) => setNewTag(event.target.value)}
                 onKeyDown={(event) => {
@@ -187,7 +186,11 @@ function ProfilePage() {
                 }}
                 placeholder={t('profile.tagPlaceholder')}
               />
-              <button onClick={addTag} aria-label={t('profile.addTag')}>
+              <button
+                disabled={saving}
+                onClick={addTag}
+                aria-label={t('profile.addTag')}
+              >
                 <Plus />
               </button>
             </div>
@@ -197,7 +200,7 @@ function ProfilePage() {
               name="interest_description"
               value={form.interest_description}
               onChange={update}
-              disabled={!editing}
+              disabled={!editing || saving}
               placeholder={t('profile.interestPlaceholder')}
             />
           </Field>
@@ -209,7 +212,7 @@ function ProfilePage() {
               name="bio"
               value={form.bio}
               onChange={update}
-              disabled={!editing}
+              disabled={!editing || saving}
             />
           </Field>
         </section>

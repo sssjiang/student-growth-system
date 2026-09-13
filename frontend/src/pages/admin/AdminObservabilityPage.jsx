@@ -1,23 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useGetRagTraceQuery, useGetRagTracesQuery } from '@/api';
+import { useState } from 'react';
 import { Activity, CheckCircle2, ChevronRight, SearchX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AdminAPI } from '@/api';
 import { Empty, Modal, PageTitle } from '@/components';
 
 function AdminObservabilityPage() {
   const { t } = useTranslation();
   const [subject, setSubject] = useState('');
-  const [traces, setTraces] = useState([]);
-  const [detail, setDetail] = useState(null);
-
-  useEffect(() => {
-    AdminAPI.getRagTraces(subject)
-      .then((data) => setTraces(data.traces))
-      .catch(() => {});
-  }, [subject]);
-
-  const inspect = async (trace) =>
-    setDetail(await AdminAPI.getRagTrace(trace.id));
+  const { currentData: data, error } = useGetRagTracesQuery(subject);
+  const traces = data?.traces || [];
+  const [detailId, setDetailId] = useState(null);
+  const { currentData: detail, error: detailError } = useGetRagTraceQuery(
+    detailId,
+    { skip: detailId === null }
+  );
+  useQueryError(error || detailError);
+  const inspect = (trace) => setDetailId(trace.id);
 
   return (
     <>
@@ -74,7 +73,7 @@ function AdminObservabilityPage() {
       {detail && (
         <Modal
           title={detail.trace.question}
-          onClose={() => setDetail(null)}
+          onClose={() => setDetailId(null)}
           size="lg"
         >
           <div className="trace-summary">

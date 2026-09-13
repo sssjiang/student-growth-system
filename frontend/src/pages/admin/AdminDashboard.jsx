@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useGetAdminDashboardQuery } from '@/api';
 import {
   AlertTriangle,
   BookOpen,
@@ -7,18 +8,12 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AdminAPI } from '@/api';
 import { Empty, PageTitle, StatCard } from '@/components';
 
 function AdminDashboard() {
   const { t } = useTranslation();
-  const [data, setData] = useState(null);
-
-  useEffect(() => {
-    AdminAPI.getDashboard()
-      .then(setData)
-      .catch(() => {});
-  }, []);
+  const { data: data, error } = useGetAdminDashboardQuery();
+  useQueryError(error);
 
   const stats = data?.stats || {};
 

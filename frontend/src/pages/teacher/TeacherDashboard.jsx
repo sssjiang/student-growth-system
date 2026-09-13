@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useGetTeacherDashboardQuery } from '@/api';
 import {
   BarChart3,
   BookOpen,
@@ -11,18 +12,13 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { TeacherAPI } from '@/api';
 import { Empty, PageTitle, StatCard, StudentRow } from '@/components';
 
 function TeacherDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
-  useEffect(() => {
-    TeacherAPI.getDashboard()
-      .then(setData)
-      .catch(() => {});
-  }, []);
+  const { data: data, error } = useGetTeacherDashboardQuery();
+  useQueryError(error);
   const openStudent = (student) =>
     navigate(`/teacher/students/${student.id}`, { state: { student } });
   const stats = data?.stats || {

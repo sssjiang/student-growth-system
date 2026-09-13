@@ -1,10 +1,11 @@
+import { errorMessage } from '@/api/errors';
+import { useLoginMutation, useRegisterMutation } from '@/api';
 import { useEffect, useState } from 'react';
 import { ChevronRight, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AuthAPI } from '@/api';
 import { Field, LanguageSwitcher, Logo } from '@/components';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 function LoginPage() {
   const { t } = useTranslation();
@@ -19,7 +20,9 @@ function LoginPage() {
     student_no: '',
   });
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [login, loginState] = useLoginMutation();
+  const [register, registerState] = useRegisterMutation();
+  const loading = loginState.isLoading || registerState.isLoading;
   useEffect(() => {
     if (isAuthenticated) {
       navigate(
@@ -37,15 +40,14 @@ function LoginPage() {
     setForm({ ...form, [event.target.name]: event.target.value });
   const submit = async (event) => {
     event.preventDefault();
-    setLoading(true);
     setError('');
     try {
       if (mode === 'register') {
-        await AuthAPI.register(form);
+        await register(form).unwrap();
         setMode('login');
         setForm({ ...form, password: '' });
       } else {
-        const session = await AuthAPI.login(form);
+        const session = await login(form).unwrap();
         signIn(session);
         const fallback =
           session.user.role === 'admin'
@@ -56,9 +58,7 @@ function LoginPage() {
         navigate(location.state?.from?.pathname || fallback, { replace: true });
       }
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setError(errorMessage(err, t));
     }
   };
   const demo = (role) =>

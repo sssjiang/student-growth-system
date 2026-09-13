@@ -1,10 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useQueryError } from '@/hooks/useQueryError';
+import {
+  useCreateStudentReportMutation,
+  useGetStudentGradesQuery,
+  useGetStudentReportQuery,
+  useGetStudentsQuery,
+} from '@/api';
+import { useRef, useState } from 'react';
 import { ArrowLeft, Download, Sparkles, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { TeacherAPI } from '@/api';
 import { Avatar, Empty, TrendChart } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 import { exportElementToPdf } from '@/utils/exportPdf';
 
 function ReportView({ data }) {
@@ -73,36 +79,29 @@ function StudentDetailPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { notify } = useToast();
-  const [student, setStudent] = useState(location.state?.student || null);
-  const [grades, setGrades] = useState([]);
-  const [report, setReport] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { currentData: studentData, error: studentError } =
+    useGetStudentsQuery();
+  const { currentData: gradeData, error: gradeError } =
+    useGetStudentGradesQuery(studentId);
+  const { currentData: reportData, error: reportError } =
+    useGetStudentReportQuery(studentId);
+  const student =
+    studentData?.students.find((item) => item.id === Number(studentId)) ||
+    location.state?.student ||
+    null;
+  const grades = gradeData?.grades || [];
+  const report = reportData?.report ? reportData : null;
+  const [createReport, { isLoading: loading }] =
+    useCreateStudentReportMutation();
   const [exporting, setExporting] = useState(false);
   const reportRef = useRef(null);
-  useEffect(() => {
-    Promise.all([
-      TeacherAPI.getStudents(),
-      TeacherAPI.getStudentGrades(studentId),
-      TeacherAPI.getStudentReport(studentId),
-    ]).then(([studentData, gradeData, reportData]) => {
-      setStudent(
-        studentData.students.find((item) => item.id === Number(studentId)) ||
-          null
-      );
-      setGrades(gradeData.grades);
-      setReport(reportData.report ? reportData : null);
-    });
-  }, [studentId]);
+  useQueryError(studentError || gradeError || reportError);
   const generate = async () => {
-    setLoading(true);
     try {
-      const data = await TeacherAPI.createStudentReport(studentId);
-      setReport(data);
+      await createReport(studentId).unwrap();
       notify(t('detail.generated'));
     } catch (err) {
-      notify(err.message);
-    } finally {
-      setLoading(false);
+      notify(err);
     }
   };
   const downloadPdf = async () => {

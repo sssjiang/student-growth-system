@@ -1,0 +1,151 @@
+.modal-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(20, 34, 26, 0.55);
+  backdrop-filter: blur(4px);
+}
+.modal-panel {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 24px;
+  background: var(--paper);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(18, 31, 23, 0.24);
+}
+.modal-panel.sm {
+  width: min(440px, 100%);
+}
+.modal-panel.lg {
+  width: min(900px, 100%);
+}
+.modal-panel.preview {
+  display: flex;
+  width: min(1280px, 100%);
+  height: calc(100vh - 48px);
+  height: calc(100dvh - 48px);
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-panel.preview .modal-header {
+  flex: none;
+}
+.preview-workspace {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+.preview-workspace.with-analysis {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 16px;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.modal-header h2 {
+  margin: 0;
+  font: 700 20px 'Noto Serif SC';
+}
+.icon-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--muted);
+  background: #f1f3ef;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.credential-form .field textarea {
+  min-height: 78px;
+}
+.credential-file-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 15px;
+  color: var(--green);
+  background: #f5f8f5;
+  border: 1px dashed #b9ccbf;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.credential-file-picker span {
+  min-width: 0;
+}
+.credential-file-picker b,
+.credential-file-picker small {
+  display: block;
+}
+.credential-file-picker b {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.credential-file-picker small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 20px;
+}
+.danger-button,
+.approve-button,
+.reject-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+.danger-button,
+.reject-button {
+  color: #fff;
+  background: #ac5946;
+}
+.approve-button {
+  color: #fff;
+  background: var(--green);
+}
+.danger-button:disabled {
+  opacity: 0.55;
+}
+.confirm-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  color: #58635c;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.danger-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  place-items: center;
+  color: #a74f3d;
+  background: #fae5df;
+  border-radius: 12px;
+}

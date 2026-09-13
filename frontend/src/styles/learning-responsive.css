@@ -1,0 +1,51 @@
+@media (max-width: 1000px) {
+  .knowledge-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .tutor-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .tutor-history {
+    max-height: 220px;
+  }
+
+  .tutor-chat {
+    height: 680px;
+  }
+}
+
+@media (max-width: 680px) {
+  .knowledge-row {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .knowledge-actions {
+    grid-column: 2;
+  }
+
+  .tutor-chat-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tutor-subjects {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .tutor-subjects button {
+    flex: 1;
+    white-space: nowrap;
+  }
+
+  .tutor-messages {
+    padding: 20px 13px;
+  }
+
+  .tutor-message > div {
+    max-width: 88%;
+  }
+}

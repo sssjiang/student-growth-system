@@ -1,0 +1,161 @@
+@media (max-width: 1000px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-grid,
+  .report-layout {
+    grid-template-columns: 1fr;
+  }
+  .quick-card {
+    grid-column: 1;
+  }
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .tag-list {
+    display: none;
+  }
+  .student-row {
+    grid-template-columns: auto 1fr 55px auto;
+  }
+  .login-story {
+    padding: 40px;
+  }
+  .story-copy h1 {
+    font-size: 40px;
+  }
+  .report-columns {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: 0.2s;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .mobile-close,
+  .menu-button {
+    display: grid;
+    place-items: center;
+  }
+  .mobile-close {
+    color: white;
+  }
+  .scrim {
+    position: fixed;
+    z-index: 15;
+    inset: 0;
+    background: rgba(16, 28, 21, 0.45);
+    border: 0;
+  }
+  .main {
+    margin-left: 0;
+  }
+  .topbar {
+    height: 62px;
+    padding: 0 18px;
+  }
+  .menu-button {
+    border: 0;
+    background: transparent;
+    margin-right: 10px;
+  }
+  .menu-button svg {
+    width: 20px;
+  }
+  .topbar-context span,
+  .topbar-context svg {
+    display: none;
+  }
+  .content {
+    padding: 26px 18px;
+  }
+  .page-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .page-title h1 {
+    font-size: 24px;
+  }
+  .stat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 14px;
+  }
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .dashboard-grid,
+  .two-column,
+  .profile-grid {
+    display: block;
+  }
+  .dashboard-grid > * + *,
+  .two-column > * + *,
+  .profile-grid > * + * {
+    margin-top: 15px;
+  }
+  .student-row {
+    grid-template-columns: auto 1fr 45px auto;
+  }
+  .login-page {
+    display: block;
+  }
+  .login-story {
+    display: none;
+  }
+  .login-panel {
+    min-height: 100vh;
+    padding: 35px 24px;
+  }
+  .mobile-logo {
+    display: block;
+    margin-bottom: 50px;
+    color: var(--green);
+  }
+  .copyright {
+    position: static;
+    margin-top: 50px;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-grid .full {
+    grid-column: auto;
+  }
+  .student-banner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .student-banner-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .student-banner-actions button {
+    flex: 1;
+  }
+  .insight-grid,
+  .report-columns {
+    grid-template-columns: 1fr;
+  }
+  .directory-tools {
+    align-items: flex-start;
+    gap: 12px;
+    flex-direction: column;
+  }
+  .search-input {
+    width: 100%;
+  }
+  .upload-zone {
+    padding: 30px 15px;
+  }
+  .user-chip span {
+    display: none;
+  }
+}

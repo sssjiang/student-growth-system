@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useFileApi } from '@/hooks/useFileApi';
+import { useQueryError } from '@/hooks/useQueryError';
+import { useGetCredentialsQuery, useReviewCredentialMutation } from '@/api';
+import { useState } from 'react';
 import {
   CheckCircle2,
   Eye,
@@ -7,9 +10,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { TeacherAPI } from '@/api';
 import { Empty, FilePreviewModal, Modal, PageTitle } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 import { canPreview, formatFileSize } from '@/utils/files';
 
 const FILTERS = [
@@ -23,30 +25,19 @@ function CredentialReviewPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
   const [filter, setFilter] = useState('pending');
-  const [credentials, setCredentials] = useState([]);
-  const [counts, setCounts] = useState({
-    approved: 0,
-    pending: 0,
-    rejected: 0,
-  });
+  const { currentData: data, error } = useGetCredentialsQuery(filter);
+  const credentials = data?.credentials || [];
+  const counts = data?.counts || { approved: 0, pending: 0, rejected: 0 };
+  const [reviewCredential, { isLoading: loading }] =
+    useReviewCredentialMutation();
+  const { previewFile } = useFileApi();
+  useQueryError(error);
   const [preview, setPreview] = useState(null);
   const [review, setReview] = useState(null);
   const [comment, setComment] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const statusLabel = (status) =>
     t(FILTERS.find((item) => item.key === status)?.label || 'review.all');
-
-  const load = useCallback(() => {
-    TeacherAPI.getCredentials(filter).then((data) => {
-      setCredentials(data.credentials);
-      setCounts(data.counts);
-    });
-  }, [filter]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const openReview = (credential, status) => {
     setReview({ credential, status });
@@ -58,13 +49,12 @@ function CredentialReviewPage() {
       notify(t('review.reasonRequired'));
       return;
     }
-    setLoading(true);
     try {
-      await TeacherAPI.reviewCredential(
-        review.credential.id,
-        review.status,
-        comment
-      );
+      await reviewCredential({
+        id: review.credential.id,
+        status: review.status,
+        comment,
+      }).unwrap();
       setReview(null);
       const notice = {
         approved: 'review.approvedNotice',
@@ -72,11 +62,8 @@ function CredentialReviewPage() {
         rejected: 'review.rejectedNotice',
       };
       notify(t(notice[review.status]));
-      load();
     } catch (err) {
-      notify(err.message);
-    } finally {
-      setLoading(false);
+      notify(err);
     }
   };
 
@@ -191,9 +178,8 @@ function CredentialReviewPage() {
       {preview && (
         <FilePreviewModal
           credential={preview}
-          loadBlob={TeacherAPI.previewCredential}
-          loadAnalysis={TeacherAPI.getCredentialAnalysis}
-          analyzeFile={TeacherAPI.analyzeCredential}
+          loadBlob={previewFile}
+          showAnalysis
           onClose={() => setPreview(null)}
         />
       )}

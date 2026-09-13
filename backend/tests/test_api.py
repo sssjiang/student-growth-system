@@ -90,7 +90,7 @@ class ApiFlowTest(unittest.TestCase):
 
     def test_teacher_manages_knowledge_and_student_uses_tutor(self):
         teacher_headers = self.login("teacher", "teacher123")
-        with patch("app.enqueue_knowledge_index", return_value="knowledge-job") as enqueue:
+        with patch("routes.knowledge.enqueue_knowledge_index", return_value="knowledge-job") as enqueue:
             uploaded = self.client.post(
                 "/api/teacher/knowledge",
                 data={
@@ -121,8 +121,8 @@ class ApiFlowTest(unittest.TestCase):
                 "content": "函数在区间上递增或递减。",
             }
         ]
-        with patch("app.retrieve_chunks", return_value=chunks), patch(
-            "app.generate_tutor_reply",
+        with patch("routes.tutor.retrieve_chunks", return_value=chunks), patch(
+            "routes.tutor.generate_tutor_reply",
             return_value=("先观察自变量和函数值的变化。[1]", [{"index": 1, "title": "函数基础"}], "test-rag"),
         ):
             chat = self.client.post(
@@ -158,7 +158,7 @@ class ApiFlowTest(unittest.TestCase):
 
     def test_credential_upload_review_undo_resubmit_and_delete(self):
         student_headers = self.login("student1", "student123")
-        with patch("app.enqueue_credential_analysis", return_value="upload-job") as enqueue:
+        with patch("routes.student_files.enqueue_credential_analysis", return_value="upload-job") as enqueue:
             uploaded = self.client.post(
                 "/api/student/files",
                 data={
@@ -185,7 +185,7 @@ class ApiFlowTest(unittest.TestCase):
 
         teacher_headers = self.login("teacher", "teacher123")
         with patch(
-            "app.enqueue_credential_analysis", return_value="manual-job"
+            "routes.credentials.enqueue_credential_analysis", return_value="manual-job"
         ) as enqueue:
             analyzed = self.client.post(
                 f"/api/teacher/credentials/{credential['id']}/analysis",
@@ -235,7 +235,7 @@ class ApiFlowTest(unittest.TestCase):
         self.assertEqual(rejected.status_code, 200)
 
         with patch(
-            "app.enqueue_credential_analysis", return_value="resubmit-job"
+            "routes.student_files.enqueue_credential_analysis", return_value="resubmit-job"
         ) as enqueue:
             resubmitted = self.client.post(
                 f"/api/student/files/{credential['id']}/resubmit",

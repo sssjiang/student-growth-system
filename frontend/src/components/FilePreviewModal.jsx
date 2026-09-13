@@ -1,114 +1,53 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useCredentialAnalysis } from '@/hooks/useCredentialAnalysis';
+import { errorMessage } from '@/api/errors';
 import {
   BrainCircuit,
-  CheckCircle2,
   FileWarning,
   LoaderCircle,
   RefreshCw,
   TriangleAlert,
-  XCircle,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from './Modal';
-
-const RESULT_ICONS = {
-  consistent: CheckCircle2,
-  match: CheckCircle2,
-  mismatch: XCircle,
-};
+import AnalysisResult from './AnalysisResult';
 
 function FilePreviewModal({
-  analyzeFile,
   credential,
-  loadAnalysis,
+  showAnalysis = false,
   loadBlob,
   onClose,
 }) {
   const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
-  const [analysis, setAnalysis] = useState(null);
-  const [analysisError, setAnalysisError] = useState('');
-  const [analyzing, setAnalyzing] = useState(false);
-  const mounted = useRef(true);
+  const {
+    analysis,
+    analyzing,
+    error: analysisFailure,
+    runAnalysis,
+  } = useCredentialAnalysis(credential.id, showAnalysis);
+  const analysisError = analysisFailure ? errorMessage(analysisFailure, t) : '';
 
   useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  const runAnalysis = useCallback(async () => {
-    if (!analyzeFile) return;
-    setAnalyzing(true);
-    setAnalysisError('');
-    try {
-      const data = await analyzeFile(credential.id);
-      if (mounted.current) setAnalysis(data.analysis);
-    } catch (err) {
-      if (mounted.current) setAnalysisError(err.message);
-    } finally {
-      if (mounted.current) setAnalyzing(false);
-    }
-  }, [analyzeFile, credential.id]);
-
-  useEffect(() => {
+    let active = true;
     let objectUrl = '';
+    setUrl('');
+    setError('');
     loadBlob(credential.id)
       .then((blob) => {
+        if (!active) return;
         objectUrl = URL.createObjectURL(blob);
         setUrl(objectUrl);
       })
-      .catch((err) => setError(err.message));
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [credential.id, loadBlob]);
-
-  useEffect(() => {
-    if (!loadAnalysis) return;
-    let active = true;
-    setAnalyzing(true);
-    loadAnalysis(credential.id)
-      .then((data) => {
-        if (!active) return;
-        setAnalysis(data.analysis);
-        if (!data.analysis) {
-          runAnalysis();
-        } else {
-          setAnalyzing(false);
-        }
-      })
       .catch((err) => {
-        if (active) {
-          setAnalysisError(err.message);
-          setAnalyzing(false);
-        }
+        if (active) setError(errorMessage(err, t));
       });
     return () => {
       active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [credential.id, loadAnalysis, runAnalysis]);
-
-  useEffect(() => {
-    if (
-      !loadAnalysis ||
-      !['pending', 'processing'].includes(analysis?.analysis_status)
-    ) {
-      return undefined;
-    }
-    const timer = window.setInterval(() => {
-      loadAnalysis(credential.id)
-        .then((data) => {
-          if (mounted.current) setAnalysis(data.analysis);
-        })
-        .catch((err) => {
-          if (mounted.current) setAnalysisError(err.message);
-        });
-    }, 2000);
-    return () => window.clearInterval(timer);
-  }, [analysis?.analysis_status, credential.id, loadAnalysis]);
+  }, [credential.id, loadBlob, t]);
 
   const isImage = credential.mime_type.startsWith('image/');
 
@@ -119,7 +58,7 @@ function FilePreviewModal({
       size="preview"
     >
       <div
-        className={`preview-workspace ${loadAnalysis ? 'with-analysis' : ''}`}
+        className={`preview-workspace ${showAnalysis ? 'with-analysis' : ''}`}
       >
         <div className="preview-body">
           {!url && !error && <LoaderCircle className="spin" size={28} />}
@@ -132,7 +71,7 @@ function FilePreviewModal({
           {url && isImage && <img src={url} alt={credential.title} />}
           {url && !isImage && <iframe src={url} title={credential.title} />}
         </div>
-        {loadAnalysis && (
+        {showAnalysis && (
           <aside className="ai-review-panel">
             <div className="ai-review-heading">
               <span>
@@ -212,77 +151,6 @@ function FilePreviewModal({
         )}
       </div>
     </Modal>
-  );
-}
-
-function AnalysisResult({ analysis, onRetry, t }) {
-  const OverallIcon = RESULT_ICONS[analysis.overall_status] || TriangleAlert;
-  return (
-    <div className="ai-review-result">
-      <div className={`ai-review-summary ${analysis.overall_status}`}>
-        <OverallIcon />
-        <div>
-          <b>{t(`aiReview.status.${analysis.overall_status}`)}</b>
-          <span>
-            {t('aiReview.confidence', {
-              value: Math.round((analysis.overall_confidence || 0) * 100),
-            })}
-          </span>
-        </div>
-      </div>
-      <p className="ai-review-notice">{t('aiReview.notice')}</p>
-      <div className="ai-field-list">
-        {(analysis.comparisons || []).map((item) => {
-          const Icon = RESULT_ICONS[item.status] || TriangleAlert;
-          return (
-            <article className={`ai-field ${item.status}`} key={item.field}>
-              <header>
-                <b>{t(`aiReview.fields.${item.field}`)}</b>
-                <span>
-                  <Icon />
-                  {t(`aiReview.fieldStatus.${item.status}`)}
-                </span>
-              </header>
-              <dl>
-                <div>
-                  <dt>{t('aiReview.submitted')}</dt>
-                  <dd>{item.submitted || t('aiReview.empty')}</dd>
-                </div>
-                <div>
-                  <dt>{t('aiReview.extracted')}</dt>
-                  <dd>{item.extracted || t('aiReview.notFound')}</dd>
-                </div>
-              </dl>
-              {item.evidence && (
-                <p>{t('aiReview.evidence', { evidence: item.evidence })}</p>
-              )}
-            </article>
-          );
-        })}
-      </div>
-      <div className="ai-review-foot">
-        <div>
-          <small>
-            {t('aiReview.method', {
-              method: t(`aiReview.methods.${analysis.extraction_method}`, {
-                defaultValue: analysis.extraction_method,
-              }),
-            })}
-          </small>
-          <small>
-            {t('aiReview.source', {
-              source: t(`aiReview.sources.${analysis.generated_by}`, {
-                defaultValue: analysis.generated_by,
-              }),
-            })}
-          </small>
-        </div>
-        <button className="secondary" onClick={onRetry}>
-          <RefreshCw size={14} />
-          {t('aiReview.reanalyze')}
-        </button>
-      </div>
-    </div>
   );
 }
 

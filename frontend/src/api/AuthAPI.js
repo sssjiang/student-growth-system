@@ -1,9 +1,14 @@
-import api from './ApiClient';
+import { baseApi } from './baseApi.js';
 
-class AuthAPI {
-  login = (credentials) => api.post('/auth/login', credentials);
+export const authAPI = baseApi.injectEndpoints({
+  endpoints: (build) => ({
+    login: build.mutation({
+      query: (body) => ({ url: `/auth/login`, method: 'POST', body: body }),
+    }),
+    register: build.mutation({
+      query: (body) => ({ url: `/auth/register`, method: 'POST', body: body }),
+    }),
+  }),
+});
 
-  register = (student) => api.post('/auth/register', student);
-}
-
-export default new AuthAPI();
+export const { useLoginMutation, useRegisterMutation } = authAPI;

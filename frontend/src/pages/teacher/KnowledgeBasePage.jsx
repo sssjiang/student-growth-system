@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFileApi } from '@/hooks/useFileApi';
+import { useQueryError } from '@/hooks/useQueryError';
+import {
+  useDeleteKnowledgeDocumentMutation,
+  useGetKnowledgeDocumentsQuery,
+  useReindexKnowledgeDocumentMutation,
+  useUploadKnowledgeDocumentMutation,
+} from '@/api';
+import { useEffect, useState } from 'react';
 import {
   BookOpen,
   Eye,
@@ -9,16 +17,25 @@ import {
   Upload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { TeacherAPI } from '@/api';
 import { Empty, FilePreviewModal, Modal, PageTitle } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks/useToast';
 
 const SUBJECTS = ['chinese', 'math', 'english', 'politics'];
 
 function KnowledgeBasePage() {
   const { t } = useTranslation();
   const { notify } = useToast();
-  const [documents, setDocuments] = useState([]);
+  const [pollingInterval, setPollingInterval] = useState(2500);
+  const { data, error } = useGetKnowledgeDocumentsQuery(undefined, {
+    pollingInterval,
+  });
+  const documents = data?.documents || [];
+  const [uploadDocument, { isLoading: loading }] =
+    useUploadKnowledgeDocumentMutation();
+  const [deleteDocument] = useDeleteKnowledgeDocumentMutation();
+  const [reindexDocument] = useReindexKnowledgeDocumentMutation();
+  const { previewKnowledgeDocument } = useFileApi();
+  useQueryError(error);
   const [file, setFile] = useState(null);
   const [form, setForm] = useState({
     title: '',
@@ -26,68 +43,50 @@ function KnowledgeBasePage() {
     grade_level: '',
     source: '',
   });
-  const [loading, setLoading] = useState(false);
+
   const [preview, setPreview] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const loadDocuments = useCallback(() => {
-    TeacherAPI.getKnowledgeDocuments()
-      .then((data) => setDocuments(data.documents))
-      .catch((err) => notify(err.message));
-  }, [notify]);
-
   useEffect(() => {
-    loadDocuments();
-  }, [loadDocuments]);
-
-  const processing = useMemo(
-    () =>
-      documents.some((item) => ['pending', 'processing'].includes(item.status)),
-    [documents]
-  );
-
-  useEffect(() => {
-    if (!processing) return undefined;
-    const timer = window.setInterval(loadDocuments, 2500);
-    return () => window.clearInterval(timer);
-  }, [loadDocuments, processing]);
+    setPollingInterval(
+      data?.documents.some((item) =>
+        ['pending', 'processing'].includes(item.status)
+      )
+        ? 2500
+        : 0
+    );
+  }, [data]);
 
   const submit = async (event) => {
     event.preventDefault();
     if (!file || !form.title.trim()) return;
-    setLoading(true);
     try {
-      await TeacherAPI.uploadKnowledgeDocument(file, form);
+      await uploadDocument({ file, metadata: form }).unwrap();
       setFile(null);
       setForm((current) => ({ ...current, title: '', source: '' }));
       notify(t('knowledge.uploaded'));
-      loadDocuments();
     } catch (err) {
-      notify(err.message);
-    } finally {
-      setLoading(false);
+      notify(err);
     }
   };
 
   const remove = async () => {
     if (!deleteTarget) return;
     try {
-      await TeacherAPI.deleteKnowledgeDocument(deleteTarget.id);
+      await deleteDocument(deleteTarget.id).unwrap();
       notify(t('knowledge.deleted'));
       setDeleteTarget(null);
-      loadDocuments();
     } catch (err) {
-      notify(err.message);
+      notify(err);
     }
   };
 
   const reindex = async (document) => {
     try {
-      await TeacherAPI.reindexKnowledgeDocument(document.id);
+      await reindexDocument(document.id).unwrap();
       notify(t('knowledge.reindexQueued'));
-      loadDocuments();
     } catch (err) {
-      notify(err.message);
+      notify(err);
     }
   };
 
@@ -247,7 +246,7 @@ function KnowledgeBasePage() {
       {preview && (
         <FilePreviewModal
           credential={preview}
-          loadBlob={TeacherAPI.previewKnowledgeDocument}
+          loadBlob={previewKnowledgeDocument}
           onClose={() => setPreview(null)}
         />
       )}

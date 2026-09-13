@@ -1,0 +1,248 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+.sidebar {
+  position: fixed;
+  z-index: 20;
+  width: 244px;
+  height: 100vh;
+  background: #244b3a;
+  color: #eaf2ed;
+  padding: 28px 18px;
+  display: flex;
+  flex-direction: column;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.logo-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #f1d18a;
+  color: #294c3d;
+  font: bold 21px 'Noto Serif SC';
+}
+.logo b,
+.logo small {
+  display: block;
+}
+.logo b {
+  font: 700 18px 'Noto Serif SC';
+  letter-spacing: 3px;
+}
+.logo small {
+  font-size: 10px;
+  opacity: 0.66;
+  letter-spacing: 2px;
+  margin-top: 2px;
+}
+.role-label {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  opacity: 0.55;
+  margin: 42px 14px 12px;
+}
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sidebar button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.sidebar nav button,
+.side-foot button {
+  height: 46px;
+  border-radius: 11px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  font-size: 14px;
+  color: #c5d5cc;
+  position: relative;
+}
+.sidebar nav button:hover,
+.side-foot button:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.sidebar nav button.active {
+  background: #f2d38d;
+  color: #294838;
+  font-weight: 600;
+}
+.sidebar nav button i {
+  position: absolute;
+  right: -18px;
+  width: 3px;
+  height: 23px;
+  background: #f2d38d;
+  border-radius: 3px;
+}
+.side-foot {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 14px;
+}
+.side-foot button {
+  width: 100%;
+}
+.side-top {
+  display: flex;
+  justify-content: space-between;
+}
+.mobile-close,
+.menu-button {
+  display: none;
+}
+.main {
+  margin-left: 244px;
+  min-width: 0;
+  flex: 1;
+}
+.topbar {
+  height: 74px;
+  padding: 0 42px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  background: rgba(250, 250, 247, 0.88);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topbar-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.topbar-context b {
+  color: var(--ink);
+}
+.user-chip {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.user-chip b,
+.user-chip small {
+  display: block;
+  font-size: 12px;
+}
+.user-chip small {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 2px;
+}
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  font-weight: 600;
+  font-size: 12px;
+}
+.avatar.sm {
+  width: 34px;
+  height: 34px;
+  font-size: 10px;
+}
+.avatar.peach {
+  background: #f7ddcf;
+  color: #9b5133;
+}
+.avatar.mint {
+  background: #d6e8dc;
+  color: #315b46;
+}
+.avatar.lavender {
+  background: #ddddef;
+  color: #595b88;
+}
+.avatar.blue {
+  background: #d8e6eb;
+  color: #426a78;
+}
+.content {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 42px;
+}
+.page-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+.eyebrow {
+  display: block;
+  color: var(--green-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+.page-title h1 {
+  font: 700 30px/1.3 'Noto Serif SC';
+  margin: 0;
+}
+.page-title p {
+  color: var(--muted);
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.language-switcher select {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 36px;
+  padding: 0 28px 0 10px;
+  outline: 0;
+  cursor: pointer;
+}
+.language-switcher select:focus {
+  border-color: #6e947f;
+  box-shadow: 0 0 0 3px #e7f0ea;
+}
+.language-switcher.compact > span {
+  display: none;
+}
+.topbar > .language-switcher {
+  margin-left: auto;
+}
+.topbar > .user-chip {
+  margin-left: 18px;
+}
+.login-language {
+  position: absolute;
+  right: 28px;
+  top: 24px;
+}
