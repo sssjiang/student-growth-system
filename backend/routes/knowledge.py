@@ -5,7 +5,12 @@ from pathlib import Path
 from flask import Blueprint, current_app, g, jsonify, request, send_from_directory
 
 from database import get_db
-from routes.common import error, knowledge_document_rows
+from routes.common import (
+    KNOWLEDGE_UPLOAD_LIMIT,
+    error,
+    knowledge_document_rows,
+    upload_exceeds_limit,
+)
 from routes.security import token_required
 from services.credential_queue import enqueue_knowledge_index
 from services.file_storage import InvalidFileError
@@ -35,6 +40,8 @@ def teacher_knowledge():
         return error("请填写教材名称")
     if subject not in SUBJECTS:
         return error("请选择正确的学科")
+    if upload_exceeds_limit(uploaded, KNOWLEDGE_UPLOAD_LIMIT):
+        return error("教材文件不能超过 40MB", 413)
     if Path(uploaded.filename).suffix.lower() not in {
         ".pdf",
         ".docx",

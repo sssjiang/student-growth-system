@@ -16,7 +16,9 @@ from routes import register_routes
 from routes.common import error
 from services.file_storage import LocalFileStorage
 
-MAX_FILE_SIZE = 10 * 1024 * 1024
+# Allow a 40 MB learning-material file plus multipart form overhead. Individual
+# upload endpoints enforce their own file-size limits.
+MAX_REQUEST_SIZE = 41 * 1024 * 1024
 
 
 def upload_folder_path() -> Path:
@@ -31,7 +33,7 @@ def create_app(test_config=None):
     app = Flask(__name__)
     app.config.update(
         SECRET_KEY=os.getenv("SECRET_KEY", "dev-only-change-me"),
-        MAX_CONTENT_LENGTH=MAX_FILE_SIZE,
+        MAX_CONTENT_LENGTH=MAX_REQUEST_SIZE,
         UPLOAD_FOLDER=str(upload_folder_path()),
     )
     if test_config:
@@ -53,7 +55,7 @@ def create_app(test_config=None):
 
     @app.errorhandler(413)
     def too_large(_):
-        return error("文件不能超过 10MB", 413)
+        return error("上传文件不能超过 40MB", 413)
 
     @app.get("/api/health")
     def health():

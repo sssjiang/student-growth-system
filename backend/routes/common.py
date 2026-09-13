@@ -5,6 +5,20 @@ import os
 from flask import jsonify
 
 
+DEFAULT_UPLOAD_LIMIT = 10 * 1024 * 1024
+KNOWLEDGE_UPLOAD_LIMIT = 40 * 1024 * 1024
+
+
+def upload_exceeds_limit(uploaded, limit):
+    """Measure a FileStorage stream without consuming it."""
+    stream = uploaded.stream
+    position = stream.tell()
+    stream.seek(0, os.SEEK_END)
+    size = stream.tell()
+    stream.seek(position)
+    return size > limit
+
+
 def error(message, status=400):
     return jsonify({"error": message}), status
 

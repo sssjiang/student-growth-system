@@ -7,7 +7,7 @@ import json
 from flask import Blueprint, jsonify, request
 
 from database import get_db
-from routes.common import error, grade_rows
+from routes.common import DEFAULT_UPLOAD_LIMIT, error, grade_rows, upload_exceeds_limit
 from routes.security import token_required
 from services.grade_report import generate_report
 
@@ -47,6 +47,8 @@ def import_grades():
     uploaded = request.files.get("file")
     if not uploaded:
         return error("请选择 CSV 文件")
+    if upload_exceeds_limit(uploaded, DEFAULT_UPLOAD_LIMIT):
+        return error("文件不能超过 10MB", 413)
     try:
         reader = csv.DictReader(io.StringIO(uploaded.read().decode("utf-8-sig")))
         expected = {"student_no", "year", "semester", "chinese", "math", "english", "politics"}

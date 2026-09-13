@@ -5,7 +5,13 @@ from pathlib import Path
 from flask import Blueprint, current_app, g, jsonify, request, send_from_directory
 
 from database import get_db
-from routes.common import credential_rows, error, parse_credential_metadata
+from routes.common import (
+    DEFAULT_UPLOAD_LIMIT,
+    credential_rows,
+    error,
+    parse_credential_metadata,
+    upload_exceeds_limit,
+)
 from routes.security import token_required
 from services.credential_queue import enqueue_credential_analysis
 from services.file_storage import InvalidFileError
@@ -25,6 +31,8 @@ def student_files():
             uploaded = request.files.get("file")
             if not uploaded or not uploaded.filename:
                 return error("请选择文件")
+            if upload_exceeds_limit(uploaded, DEFAULT_UPLOAD_LIMIT):
+                return error("文件不能超过 10MB", 413)
             metadata, metadata_error = parse_credential_metadata(request.form)
             if metadata_error:
                 return error(metadata_error)
@@ -92,6 +100,8 @@ def resubmit_student_file(file_id):
         uploaded = request.files.get("file")
         saved = None
         if uploaded and uploaded.filename:
+            if upload_exceeds_limit(uploaded, DEFAULT_UPLOAD_LIMIT):
+                return error("文件不能超过 10MB", 413)
             try:
                 saved = current_app.extensions["file_storage"].save(uploaded)
             except InvalidFileError as exc:

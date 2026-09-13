@@ -21,6 +21,7 @@ import { Empty, FilePreviewModal, Modal, PageTitle } from '@/components';
 import { useToast } from '@/hooks/useToast';
 
 const SUBJECTS = ['chinese', 'math', 'english', 'politics'];
+const MAX_KNOWLEDGE_FILE_SIZE = 40 * 1024 * 1024;
 
 function KnowledgeBasePage() {
   const { t } = useTranslation();
@@ -88,6 +89,17 @@ function KnowledgeBasePage() {
     } catch (err) {
       notify(err);
     }
+  };
+
+  const selectFile = (event) => {
+    const nextFile = event.target.files[0] || null;
+    if (nextFile && nextFile.size > MAX_KNOWLEDGE_FILE_SIZE) {
+      event.target.value = '';
+      setFile(null);
+      notify(t('knowledge.tooLarge'));
+      return;
+    }
+    setFile(nextFile);
   };
 
   return (
@@ -161,7 +173,7 @@ function KnowledgeBasePage() {
               hidden
               type="file"
               accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
-              onChange={(event) => setFile(event.target.files[0] || null)}
+              onChange={selectFile}
             />
           </label>
           <button

@@ -25,6 +25,8 @@ const ERROR_KEYS = {
   文件不存在: 'fileMissing',
   没有访问此文件的权限: 'fileForbidden',
   '文件不能超过 10MB': 'fileTooLarge',
+  '上传文件不能超过 40MB': 'knowledgeFileTooLarge',
+  '教材文件不能超过 40MB': 'knowledgeFileTooLarge',
   'AI 辅助评审失败，请稍后重试': 'aiReviewFailed',
   请选择教材文件: 'selectKnowledgeFile',
   请填写教材名称: 'knowledgeTitleRequired',
