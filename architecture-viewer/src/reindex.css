@@ -1,0 +1,9 @@
+.reindex-control { position: relative; display: flex; align-items: center; gap: 10px; margin-left: auto; flex-shrink: 0; }
+.reindex-time { font-size: 9px; color: #a7b99c; white-space: nowrap; }
+.reindex-control > button { padding: 8px 11px; border: 1px solid #677b50; border-radius: 5px; background: #30442a; color: #e0edca; font: inherit; font-size: 11px; white-space: nowrap; }
+.reindex-control > button:hover { background: #415937; }
+.reindex-control > button:disabled { opacity: .6; cursor: wait; }
+.reindex-status { position: absolute; top: calc(100% + 10px); right: 0; z-index: 30; width: max-content; max-width: min(360px, 90vw); padding: 11px 14px; border: 1px solid #81966b; border-radius: 6px; background: #263d27; color: #e3efcd; font-size: 11px; line-height: 1.8; box-shadow: 0 8px 24px #0004; }
+.reindex-status.failed { border-color: #bd8e72; background: #45342a; color: #f4d8c7; }
+@media(max-width:1200px) { .reindex-time { display: none; } .city-header { gap: 16px; } }
+@media(max-width:640px) { .city-header, .topbar { height: auto; min-height: 65px; flex-wrap: wrap; padding-block: 10px; row-gap: 10px; } .reindex-control > button { font-size: 10px; padding: 6px 8px; } .topbar-right { flex-wrap: wrap; gap: 10px; } }

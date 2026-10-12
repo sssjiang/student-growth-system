@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>知行 · Figma 页面转换</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      const params = new URLSearchParams(location.search);
+      const route = params.get('route') || '/sign-in';
+      const role = route.split('/')[1];
+      // Keep capture sessions isolated from the user's regular browser session.
+      const memory = new Map([['i18nextLng', 'zhCN']]);
+      const originalGet = Storage.prototype.getItem;
+      const originalSet = Storage.prototype.setItem;
+      const originalRemove = Storage.prototype.removeItem;
+      const keys = new Set(['student_token', 'student_user', 'i18nextLng']);
+      Storage.prototype.getItem = function (key) {
+        return this === localStorage && keys.has(key)
+          ? memory.get(key) ?? null : originalGet.call(this, key);
+      };
+      Storage.prototype.setItem = function (key, value) {
+        if (this === localStorage && keys.has(key)) memory.set(key, String(value));
+        else originalSet.call(this, key, value);
+      };
+      Storage.prototype.removeItem = function (key) {
+        if (this === localStorage && keys.has(key)) memory.delete(key);
+        else originalRemove.call(this, key);
+      };
+      if (['teacher', 'student', 'admin'].includes(role)) {
+        const username = role === 'student' ? 'student1' : role;
+        const password = role === 'student' ? 'student123' : `${role}123`;
+        const response = await fetch('/api/auth/login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        if (!response.ok) throw new Error(`Capture login failed: ${response.status}`);
+        const session = await response.json();
+        localStorage.setItem('student_token', session.token);
+        localStorage.setItem('student_user', JSON.stringify(session.user));
+      }
+      document.title = params.get('title') || route;
+      history.replaceState(null, '', route + location.hash);
+      await import('/src/main.jsx');
+      await document.fonts.ready;
+      const capture = document.createElement('script');
+      capture.src = 'https://mcp.figma.com/mcp/html-to-design/capture.js';
+      capture.async = true;
+      document.head.appendChild(capture);
+    </script>
+  </body>
+</html>
